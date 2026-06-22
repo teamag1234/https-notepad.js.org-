@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/sync-kajabi",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/check-failed-payments",
+      "schedule": "0 10 * * *"
+    }
+  ]
+}
