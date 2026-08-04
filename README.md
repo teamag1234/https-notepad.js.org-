@@ -209,6 +209,48 @@ EMAIL_FROM=                  # Email que aparece como remitente
 CRON_SECRET=                 # Clave secreta para cron jobs
 ```
 
+## 🤖 Conectar Claude a Airtable
+
+Este repositorio incluye un archivo `.mcp.json` que conecta Claude (Claude Code) directamente con tu base de Airtable mediante el protocolo MCP. Con esto, Claude puede listar tablas, leer registros, crear y actualizar datos de tu Airtable directamente desde la conversación.
+
+### Configuración
+
+1. **Crea un token de Airtable** en https://airtable.com/create/tokens con estos permisos (scopes):
+   - `data.records:read`
+   - `data.records:write`
+   - `schema.bases:read`
+
+   Y dale acceso a la base que usa este proyecto.
+
+2. **Define la variable de entorno `AIRTABLE_TOKEN`** (la misma que ya usa el proyecto):
+   - **Claude Code en la web**: en la configuración de tu entorno (Environment → Environment Variables), añade `AIRTABLE_TOKEN` con tu token.
+   - **Claude Code local (terminal)**: exporta la variable antes de abrir Claude, por ejemplo `export AIRTABLE_TOKEN=patXXXX...`, o añádela a tu shell profile.
+
+3. **Abre Claude Code en este repositorio**. Al iniciar la sesión, Claude detectará el servidor MCP `airtable` (te pedirá aprobarlo la primera vez) y podrás pedirle cosas como:
+   - "Muéstrame los pagos con estado Fallido"
+   - "Crea un registro de prueba en la tabla Pagos"
+   - "¿Cuántos alumnos tienen pagos pendientes este mes?"
+
+> **Nota**: El token nunca se guarda en el código — `.mcp.json` solo hace referencia a la variable de entorno `AIRTABLE_TOKEN`.
+
+### Alternativa: Claude Desktop
+
+Si usas la app de escritorio de Claude, añade esto a tu configuración de MCP (Settings → Developer → Edit Config):
+
+```json
+{
+  "mcpServers": {
+    "airtable": {
+      "command": "npx",
+      "args": ["-y", "airtable-mcp-server"],
+      "env": {
+        "AIRTABLE_API_KEY": "patXXXX_tu_token_aqui"
+      }
+    }
+  }
+}
+```
+
 ## 📈 Próximas Mejoras
 
 - [ ] Dashboard con gráficos de pagos
