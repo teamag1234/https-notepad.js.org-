@@ -1,4 +1,5 @@
 import { startOnboarding } from '../../../lib/onboarding.js';
+import { createRecord } from '../../../lib/airtable.js';
 
 // Webhook que Kajabi llama cuando un alumno compra/rellena una oferta
 // (evento "Offer purchased" / "Form submitted" en Kajabi → Settings → Webhooks).
@@ -27,6 +28,13 @@ export async function POST(req) {
 
     if (!email || !courseName) {
       console.error('Webhook de Kajabi sin email o curso identificable');
+      // Guardamos el payload en Airtable para poder diagnosticar formatos
+      // de evento no contemplados sin acceso a los logs de Vercel.
+      await createRecord('Webhooks Log', {
+        'Fecha': new Date().toISOString(),
+        'Motivo': `Sin ${!email ? 'email' : 'curso'} identificable`,
+        'Payload': JSON.stringify(payload, null, 2).substring(0, 90000),
+      });
       return new Response(
         JSON.stringify({ success: false, message: 'Payload sin email o curso' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
