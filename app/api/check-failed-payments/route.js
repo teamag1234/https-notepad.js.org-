@@ -1,4 +1,4 @@
-import { checkFailedPayments } from '../../lib/sync-logic.js';
+import { checkFailedPayments } from '../../../lib/sync-logic.js';
 
 export async function GET(req) {
   try {

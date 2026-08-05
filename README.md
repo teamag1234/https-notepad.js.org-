@@ -12,6 +12,7 @@ Sistema completo de sincronización automática de pagos desde Kajabi a Airtable
 - ✅ **Cron jobs automáticos** en Vercel
 - ✅ **Historial completo** de pagos y estados
 - ✅ **Reportes detallados** de cada sincronización
+- ✅ **Onboarding automático por Telegram** con aceptación de condiciones y acceso al grupo del curso — ver [TELEGRAM_ONBOARDING.md](TELEGRAM_ONBOARDING.md)
 
 ## 🚀 Requisitos
 
@@ -207,6 +208,9 @@ EMAIL_USER=                  # Tu email de Gmail
 EMAIL_PASSWORD=              # App Password de Gmail
 EMAIL_FROM=                  # Email que aparece como remitente
 CRON_SECRET=                 # Clave secreta para cron jobs
+TELEGRAM_BOT_TOKEN=          # Token del bot (@BotFather)
+TELEGRAM_BOT_USERNAME=       # Username del bot sin @
+TELEGRAM_WEBHOOK_SECRET=     # Secreto del webhook de Telegram
 ```
 
 ## 📈 Próximas Mejoras
