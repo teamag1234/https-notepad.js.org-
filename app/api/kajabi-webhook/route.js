@@ -43,10 +43,16 @@ export async function POST(req) {
 
     const record = await startOnboarding({ name, email, courseName });
 
+    const message = record?.ignored
+      ? `Oferta sin curso de Telegram configurado, ignorada: ${courseName}`
+      : record
+        ? `Onboarding iniciado para ${email}`
+        : 'Error creando el onboarding';
     return new Response(
       JSON.stringify({
         success: !!record,
-        message: record ? `Onboarding iniciado para ${email}` : 'Error creando el onboarding',
+        ignored: !!record?.ignored,
+        message,
         timestamp: new Date().toISOString(),
       }),
       { status: record ? 200 : 500, headers: { 'Content-Type': 'application/json' } }
