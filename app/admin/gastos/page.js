@@ -5,8 +5,8 @@ import { Shell, useAdmin, eur } from '../ui.js';
 
 const CATEGORIAS = [
   'Nóminas', 'Seguridad Social', 'Impuestos', 'Publicidad / Ads', 'Software y herramientas',
-  'Afiliados y comisiones', 'Pasarela de pago', 'Formación', 'Equipo / Material', 'Otros gastos',
-  'Sin clasificar',
+  'Afiliados y comisiones', 'Pasarela de pago', 'Formación', 'Equipo / Material', 'Gastos Jesu',
+  'Otros gastos', 'Sin clasificar',
 ];
 
 const hoy = () => new Date().toISOString().slice(0, 10);
