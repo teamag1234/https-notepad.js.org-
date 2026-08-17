@@ -11,8 +11,11 @@ function Pagos() {
   const [abierto, setAbierto] = useState(null);
   const [trabajando, setTrabajando] = useState(false);
 
+  const [conciliacion, setConciliacion] = useState(null);
+
   const cargar = useCallback(() => {
     apiFetch('/api/admin/recordatorios').then(setDatos).catch((e) => setError(e.message));
+    apiFetch('/api/admin/conciliacion').then(setConciliacion).catch(() => {});
   }, [apiFetch]);
 
   useEffect(() => { if (clave) cargar(); }, [clave, cargar]);
@@ -34,6 +37,17 @@ function Pagos() {
     try {
       const r = await apiFetch('/api/admin/recordatorios', { method: 'POST', body: JSON.stringify({ accion: 'enviar-todos' }) });
       setAviso(`✅ Enviados ${r.enviados} recordatorios (${r.omitidos} omitidos por haberse avisado hace menos de 7 días).`);
+    } catch (e) { setError(e.message); }
+    setTrabajando(false);
+  };
+
+  const comprobarPagos = async () => {
+    setTrabajando(true);
+    setError('');
+    try {
+      const r = await apiFetch('/api/admin/conciliacion', { method: 'POST' });
+      setAviso(`✅ Comprobación hecha: ${r.conciliados} pagos conciliados (marcados como pagados en Airtable) y ${r.paraRevisar} para revisar.`);
+      cargar();
     } catch (e) { setError(e.message); }
     setTrabajando(false);
   };
@@ -114,6 +128,46 @@ function Pagos() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Conciliación automática de pagos recibidos */}
+      <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', marginBottom: '18px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+          <h3 style={{ margin: 0 }}>🔄 Pagos recibidos (conciliación automática)</h3>
+          <button onClick={comprobarPagos} disabled={trabajando} style={boton('#059669')}>Comprobar ahora</button>
+        </div>
+        <p style={{ fontSize: '13px', color: '#6b7280' }}>
+          Cada mañana, tras leer el banco, la app busca transferencias cuyo concepto contenga el nombre del alumno moroso.
+          Si el importe coincide con su deuda: se marcan sus meses como CERRADO en Airtable, deja de ser moroso y
+          se le desactivan los recordatorios — todo solo. Si el nombre cuadra pero el importe no, aparece aquí para que lo revises.
+        </p>
+        {conciliacion && conciliacion.paraRevisar.length > 0 && (
+          <div style={{ backgroundColor: '#fef3c7', borderRadius: '8px', padding: '12px 16px', marginBottom: '10px' }}>
+            <strong>⚠️ Para revisar (nombre cuadra, importe no):</strong>
+            <ul style={{ margin: '6px 0 0', paddingLeft: '20px', fontSize: '14px' }}>
+              {conciliacion.paraRevisar.map((c) => (
+                <li key={c.id}>{c.fecha_pago}: transferencia de {eur(c.importe)} — parece de <strong>{c.nombre}</strong></li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {conciliacion && conciliacion.conciliados.length > 0 ? (
+          <table style={{ width: '100%', fontSize: '14px', borderCollapse: 'collapse' }}>
+            <tbody>
+              {conciliacion.conciliados.map((c) => (
+                <tr key={c.id} style={{ borderTop: '1px solid #f3f4f6' }}>
+                  <td style={{ padding: '8px 6px', whiteSpace: 'nowrap', color: '#6b7280' }}>{c.fecha_pago}</td>
+                  <td style={{ padding: '8px 6px' }}>✅ <strong>{c.nombre}</strong> pagó por transferencia — marcado como pagado en Airtable y fuera de morosos</td>
+                  <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: 'bold', color: '#059669', whiteSpace: 'nowrap' }}>{eur(c.importe)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          conciliacion && conciliacion.paraRevisar.length === 0 && (
+            <p style={{ color: '#9ca3af', fontSize: '14px', margin: 0 }}>Todavía no se ha detectado ningún pago de morosos en el banco.</p>
+          )
+        )}
       </div>
 
       {datos.sinEmail.length > 0 && (
