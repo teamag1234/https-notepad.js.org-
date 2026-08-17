@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { comprobarAdmin } from '../../../../../lib/admin/auth.js';
-import { estadoBanco, buscarBancos, bancoConfigurado } from '../../../../../lib/admin/banco.js';
+import { estadoBanco, buscarBancos, bancoConfigurado, diagnosticoClave } from '../../../../../lib/admin/banco.js';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,7 +16,7 @@ export async function GET(request) {
     if (buscar && bancoConfigurado()) {
       bancos = await buscarBancos(buscar);
     }
-    return NextResponse.json({ success: true, data: { ...estado, bancos } });
+    return NextResponse.json({ success: true, data: { ...estado, bancos, diagnostico: diagnosticoClave() } });
   } catch (error) {
     console.error('Error en /api/admin/banco/estado:', error.message);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

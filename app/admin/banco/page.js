@@ -74,6 +74,18 @@ function Banco() {
         </div>
       )}
 
+      {estado && estado.configurado && estado.diagnostico && estado.diagnostico.claveValida === false && (
+        <div style={{ backgroundColor: '#fef3c7', padding: '16px', borderRadius: '10px', marginBottom: '16px' }}>
+          <strong>⚠️ La clave privada guardada en Vercel no es válida.</strong>
+          <p style={{ margin: '8px 0 0', fontSize: '14px' }}>
+            Se guardaron {estado.diagnostico.caracteresPegados} caracteres ({estado.diagnostico.caracteresBase64} útiles).
+            Probablemente se pegó incompleta o se pegó otra cosa. Ve a Vercel → Settings → Environment Variables,
+            edita <code>ENABLE_BANKING_PRIVATE_KEY</code> y vuelve a pegar el archivo de clave completo
+            (desde -----BEGIN hasta -----END-----). Después: Deployments → ⋯ → Redeploy.
+          </p>
+          <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#92400e' }}>Detalle técnico: {estado.diagnostico.error}</p>
+        </div>
+      )}
       {estado && estado.configurado && estado.cuentas.length === 0 && (
         <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
           <h3 style={{ marginTop: 0 }}>Conectar la cuenta de Cajamar</h3>

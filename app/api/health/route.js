@@ -3,6 +3,7 @@ export async function GET() {
     JSON.stringify({
       status: 'ok',
       message: 'Kajabi-Airtable Sync Service is running',
+      version: process.env.VERCEL_GIT_COMMIT_SHA?.substring(0, 7) || 'local',
       timestamp: new Date().toISOString(),
     }),
     {
