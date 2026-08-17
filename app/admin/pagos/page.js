@@ -30,13 +30,15 @@ function Pagos() {
     setTrabajando(false);
   };
 
-  const enviarTodos = async () => {
-    if (!confirm(`¿Enviar el recordatorio de pago a ${datos.conEmail.length} alumnos morosos AHORA?`)) return;
+  const enviarUno = async (m) => {
+    const previo = m.envio ? `\n(Ya se le envió el ${new Date(m.envio.ultimo).toLocaleDateString('es-ES')} — esto le enviará otro)` : '';
+    if (!confirm(`¿Enviar AHORA el recordatorio de ${eur(m.debe)} a ${m.nombre} <${m.email}>?${previo}\n\nDespués, el seguimiento semanal será automático hasta que llegue su pago.`)) return;
     setTrabajando(true);
     setError('');
     try {
-      const r = await apiFetch('/api/admin/recordatorios', { method: 'POST', body: JSON.stringify({ accion: 'enviar-todos' }) });
-      setAviso(`✅ Enviados ${r.enviados} recordatorios (${r.omitidos} omitidos por haberse avisado hace menos de 7 días).`);
+      const r = await apiFetch('/api/admin/recordatorios', { method: 'POST', body: JSON.stringify({ accion: 'enviar-uno', id: m.id }) });
+      setAviso(`✅ Recordatorio enviado a ${r.enviado} <${r.email}>. Seguimiento semanal activado hasta que pague.`);
+      cargar();
     } catch (e) { setError(e.message); }
     setTrabajando(false);
   };
@@ -65,21 +67,19 @@ function Pagos() {
       {aviso && <p style={{ backgroundColor: '#dcfce7', padding: '12px', borderRadius: '6px' }}>{aviso}</p>}
       {error && <p style={{ backgroundColor: '#fee2e2', padding: '12px', borderRadius: '6px' }}>{error}</p>}
 
-      {/* Estado del sistema */}
-      <div style={{ backgroundColor: datos.activos ? '#dcfce7' : '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '14px 18px', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-        <span style={{ fontSize: '22px' }}>{datos.activos ? '🟢' : '🔒'}</span>
+      {/* Cómo funciona */}
+      <div style={{ backgroundColor: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '10px', padding: '14px 18px', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+        <span style={{ fontSize: '22px' }}>👆</span>
         <div style={{ flex: 1, minWidth: '260px' }}>
-          <strong>{datos.activos ? 'Envíos automáticos ACTIVADOS' : 'Envíos DESACTIVADOS — modo revisión'}</strong>
-          <div style={{ fontSize: '13px', color: '#6b7280' }}>
-            {datos.activos
-              ? 'Cada lunes a las 9:00 se envía el recordatorio a los morosos (máximo uno por semana a cada alumno).'
-              : 'Nadie recibirá ningún email. Para activar los envíos: en Vercel añade la variable RECORDATORIOS_ACTIVOS con valor "si" y haz Redeploy.'}
+          <strong>Revisión uno a uno</strong>
+          <div style={{ fontSize: '13px', color: '#374151' }}>
+            Revisa cada email con "👁 Ver email" y dispara el primero con <strong>"📤 Enviar email"</strong>.
+            A partir de ahí, ese alumno recibe un recordatorio automático <strong>cada lunes</strong> hasta que su
+            transferencia aparezca en el banco (entonces se marca pagado y se corta solo).
+            Los alumnos a los que no envíes nada, no reciben nada.
           </div>
         </div>
         <button onClick={prueba} disabled={trabajando} style={boton('#2563eb')}>📧 Enviarme una prueba</button>
-        {datos.activos && (
-          <button onClick={enviarTodos} disabled={trabajando} style={boton('#dc2626')}>🚀 Enviar a todos ahora</button>
-        )}
       </div>
 
       <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', marginBottom: '18px' }}>
@@ -98,6 +98,7 @@ function Pagos() {
                 <th style={{ padding: '8px 6px' }}>Alumno</th>
                 <th style={{ padding: '8px 6px', textAlign: 'right' }}>Debe</th>
                 <th style={{ padding: '8px 6px' }}>Email</th>
+                <th style={{ padding: '8px 6px' }}>Seguimiento</th>
                 <th />
               </tr>
             </thead>
@@ -108,15 +109,25 @@ function Pagos() {
                     <td style={{ padding: '8px 6px', fontWeight: 'bold' }}>{m.nombre}<div style={{ fontWeight: 'normal', fontSize: '12px', color: '#9ca3af' }}>{m.curso}</div></td>
                     <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: 'bold', color: '#dc2626', whiteSpace: 'nowrap' }}>{eur(m.debe)}</td>
                     <td style={{ padding: '8px 6px', fontSize: '13px' }}>{m.email}</td>
-                    <td style={{ padding: '8px 6px' }}>
-                      <button onClick={() => setAbierto(abierto === m.id ? null : m.id)} style={{ border: '1px solid #d1d5db', background: 'white', borderRadius: '6px', padding: '5px 10px', cursor: 'pointer', fontSize: '12px' }}>
+                    <td style={{ padding: '8px 6px', fontSize: '12px' }}>
+                      {m.envio ? (
+                        <span style={{ color: '#059669' }}>🟢 activo · {m.envio.enviados} enviado{m.envio.enviados > 1 ? 's' : ''}, último {new Date(m.envio.ultimo).toLocaleDateString('es-ES')}</span>
+                      ) : (
+                        <span style={{ color: '#9ca3af' }}>— sin enviar</span>
+                      )}
+                    </td>
+                    <td style={{ padding: '8px 6px', whiteSpace: 'nowrap' }}>
+                      <button onClick={() => setAbierto(abierto === m.id ? null : m.id)} style={{ border: '1px solid #d1d5db', background: 'white', borderRadius: '6px', padding: '5px 10px', cursor: 'pointer', fontSize: '12px', marginRight: '6px' }}>
                         {abierto === m.id ? 'Cerrar' : '👁 Ver email'}
+                      </button>
+                      <button onClick={() => enviarUno(m)} disabled={trabajando} style={{ border: 'none', backgroundColor: m.envio ? '#6b7280' : '#059669', color: 'white', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', opacity: trabajando ? 0.5 : 1 }}>
+                        📤 {m.envio ? 'Reenviar' : 'Enviar email'}
                       </button>
                     </td>
                   </tr>
                   {abierto === m.id && (
                     <tr key={`${m.id}-preview`}>
-                      <td colSpan={4} style={{ padding: '10px', backgroundColor: '#f9fafb' }}>
+                      <td colSpan={5} style={{ padding: '10px', backgroundColor: '#f9fafb' }}>
                         <div style={{ fontSize: '13px', color: '#6b7280', marginBottom: '8px' }}><strong>Asunto:</strong> {m.preview.asunto}</div>
                         <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '16px', backgroundColor: 'white' }}
                              dangerouslySetInnerHTML={{ __html: m.preview.html }} />
