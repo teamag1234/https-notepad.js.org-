@@ -126,6 +126,7 @@ export function Shell({ activo, children }) {
     { id: 'gastos', href: '/admin/gastos', texto: '💸 Gastos' },
     { id: 'ingresos', href: '/admin/ingresos', texto: '💰 Ingresos' },
     { id: 'morosos', href: '/admin/morosos', texto: '⚠️ Morosos' },
+    { id: 'banco', href: '/admin/banco', texto: '🏦 Banco' },
   ];
 
   return (
