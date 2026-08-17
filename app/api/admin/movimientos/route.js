@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { comprobarAdmin } from '../../../../lib/admin/auth.js';
-import { listarMovimientos, crearMovimiento, borrarMovimiento } from '../../../../lib/admin/finanzas.js';
+import { listarMovimientos, crearMovimiento, borrarMovimiento, cambiarCategoria, CATEGORIAS_GASTO, CATEGORIAS_INGRESO } from '../../../../lib/admin/finanzas.js';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,6 +53,27 @@ export async function POST(request) {
     return NextResponse.json({ success: true, data: creado });
   } catch (error) {
     console.error('Error creando movimiento:', error.message);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+export async function PATCH(request) {
+  const auth = comprobarAdmin(request);
+  if (!auth.ok) {
+    return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
+  }
+  try {
+    const body = await request.json();
+    if (!body.id || !body.categoria) {
+      return NextResponse.json({ success: false, error: 'Faltan id o categoria' }, { status: 400 });
+    }
+    if (![...CATEGORIAS_GASTO, ...CATEGORIAS_INGRESO, 'Traspaso Kajabi'].includes(body.categoria)) {
+      return NextResponse.json({ success: false, error: 'Categoría no válida' }, { status: 400 });
+    }
+    await cambiarCategoria(Number(body.id), body.categoria);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error cambiando categoría:', error.message);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
