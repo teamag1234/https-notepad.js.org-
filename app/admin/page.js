@@ -11,25 +11,25 @@ const VERDE = '#059669';
 const ROJO = '#dc2626';
 const AMBAR = '#d97706';
 
-function Delta({ valor, invertir = false }) {
+function Delta({ valor, invertir = false, etiqueta = 'vs mes anterior' }) {
   if (valor == null) return null;
   const sube = valor >= 0;
   const bueno = invertir ? !sube : sube;
   return (
     <span style={{ fontSize: '13px', fontWeight: 'bold', color: bueno ? VERDE : ROJO }}>
       {sube ? '▲' : '▼'} {Math.abs(valor).toLocaleString('es-ES')}%
-      <span style={{ color: '#9ca3af', fontWeight: 'normal' }}> vs mes anterior</span>
+      <span style={{ color: '#9ca3af', fontWeight: 'normal' }}> {etiqueta}</span>
     </span>
   );
 }
 
-function TileGrande({ titulo, valor, color, delta, invertir, pie }) {
+function TileGrande({ titulo, valor, color, delta, invertir, pie, etiquetaDelta }) {
   return (
     <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px 22px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', flex: '1 1 210px', minWidth: '200px' }}>
       <div style={{ fontSize: '13px', color: '#6b7280', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.4px' }}>{titulo}</div>
       <div style={{ fontSize: '34px', fontWeight: 800, color, lineHeight: 1.1 }}>{valor}</div>
       <div style={{ marginTop: '6px', minHeight: '18px' }}>
-        <Delta valor={delta} invertir={invertir} />
+        <Delta valor={delta} invertir={invertir} etiqueta={etiquetaDelta} />
         {pie && <div style={{ fontSize: '12px', color: '#9ca3af' }}>{pie}</div>}
       </div>
     </div>
@@ -69,12 +69,27 @@ function Dashboard() {
   const [error, setError] = useState('');
   const [inicializando, setInicializando] = useState(false);
 
+  const [periodo, setPeriodo] = useState({ desde: '', hasta: '' });
+
   const cargar = useCallback(() => {
     setError('');
-    apiFetch('/api/admin/resumen').then(setDatos).catch((e) => setError(e.message));
-  }, [apiFetch]);
+    const params = new URLSearchParams();
+    if (periodo.desde) params.set('desde', periodo.desde);
+    if (periodo.hasta || periodo.desde) params.set('hasta', periodo.hasta || periodo.desde);
+    apiFetch(`/api/admin/resumen${params.toString() ? `?${params}` : ''}`).then(setDatos).catch((e) => setError(e.message));
+  }, [apiFetch, periodo]);
 
   useEffect(() => { if (clave) cargar(); }, [clave, cargar]);
+
+  const mesHoy = () => {
+    const ahora = new Date();
+    return `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}`;
+  };
+  const restarMeses = (n) => {
+    const ahora = new Date();
+    const f = new Date(ahora.getFullYear(), ahora.getMonth() - n, 1);
+    return `${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, '0')}`;
+  };
 
   const inicializar = async () => {
     setInicializando(true);
@@ -110,26 +125,56 @@ function Dashboard() {
   }
 
   const m = datos.mesActual;
+  const p = datos.periodo || { desde: m.mes, hasta: m.mes, duracion: 1, esMesActual: true };
   const maximo = Math.max(...datos.porMes.map((x) => Math.max(x.ingresos, x.gastos)), 1);
   const gastosCategorias = datos.categoriasMes.filter((c) => c.tipo === 'GASTO').sort((a, b) => b.total - a.total);
   const totalGastosMes = gastosCategorias.reduce((s, c) => s + c.total, 0) || 1;
-  const nombreMes = `${MESES_LARGO[m.mes.slice(5)]} ${m.mes.slice(0, 4)}`;
+  const nombrePeriodo = p.duracion === 1
+    ? `${MESES_LARGO[p.desde.slice(5)]} ${p.desde.slice(0, 4)}`
+    : `${MESES_LARGO[p.desde.slice(5)]} ${p.desde.slice(0, 4)} — ${MESES_LARGO[p.hasta.slice(5)]} ${p.hasta.slice(0, 4)}`;
+  const etiquetaDelta = p.duracion === 1 ? 'vs mes anterior' : `vs ${p.duracion} meses anteriores`;
+  const chipPeriodo = (activo) => ({
+    padding: '7px 14px', borderRadius: '999px', border: '1px solid #d1d5db', cursor: 'pointer', fontSize: '13px',
+    backgroundColor: activo ? '#111827' : 'white', color: activo ? 'white' : '#374151', fontWeight: activo ? 'bold' : 'normal',
+  });
+  const esEsteMes = !periodo.desde;
+  const esMesPasado = periodo.desde === restarMeses(1) && (periodo.hasta || periodo.desde) === restarMeses(1);
+  const esTresMeses = periodo.desde === restarMeses(2) && (periodo.hasta || periodo.desde) === mesHoy();
 
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap' }}>
-        <h2 style={{ margin: '0 0 16px' }}>{nombreMes}</h2>
+        <h2 style={{ margin: '0 0 12px' }}>{nombrePeriodo}</h2>
         <span style={{ fontSize: '12px', color: '#9ca3af' }}>
           Actualizado {new Date(datos.actualizadoEl).toLocaleTimeString('es-ES')} ·{' '}
           <a onClick={cargar} style={{ cursor: 'pointer', color: '#2563eb' }}>refrescar</a>
         </span>
       </div>
 
-      {/* KPIs del mes */}
+      {/* Selector de periodo */}
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '16px' }}>
+        <button style={chipPeriodo(esEsteMes)} onClick={() => setPeriodo({ desde: '', hasta: '' })}>Este mes</button>
+        <button style={chipPeriodo(esMesPasado)} onClick={() => setPeriodo({ desde: restarMeses(1), hasta: restarMeses(1) })}>Mes pasado</button>
+        <button style={chipPeriodo(esTresMeses)} onClick={() => setPeriodo({ desde: restarMeses(2), hasta: mesHoy() })}>Últimos 3 meses</button>
+        <span style={{ fontSize: '13px', color: '#6b7280', marginLeft: '8px' }}>Personalizado:</span>
+        <input
+          type="month" value={periodo.desde} max={mesHoy()}
+          onChange={(e) => setPeriodo((prev) => ({ desde: e.target.value, hasta: prev.hasta || e.target.value }))}
+          style={{ padding: '6px 8px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px' }}
+        />
+        <span style={{ color: '#9ca3af' }}>→</span>
+        <input
+          type="month" value={periodo.hasta} min={periodo.desde || undefined} max={mesHoy()}
+          onChange={(e) => setPeriodo((prev) => ({ desde: prev.desde || e.target.value, hasta: e.target.value }))}
+          style={{ padding: '6px 8px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px' }}
+        />
+      </div>
+
+      {/* KPIs del periodo */}
       <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', marginBottom: '14px' }}>
-        <TileGrande titulo="💰 Ingresos" valor={eur(m.ingresos)} color={VERDE} delta={m.deltaIngresos} pie={`${m.numCobros} cobros este mes`} />
-        <TileGrande titulo="💸 Gastos" valor={eur(m.gastos)} color={ROJO} delta={m.deltaGastos} invertir />
-        <TileGrande titulo="📈 Beneficio" valor={eur(m.beneficio)} color={m.beneficio >= 0 ? VERDE : ROJO} delta={m.deltaBeneficio} />
+        <TileGrande titulo="💰 Ingresos" valor={eur(m.ingresos)} color={VERDE} delta={m.deltaIngresos} etiquetaDelta={etiquetaDelta} pie={`${m.numCobros} cobros en el periodo`} />
+        <TileGrande titulo="💸 Gastos" valor={eur(m.gastos)} color={ROJO} delta={m.deltaGastos} invertir etiquetaDelta={etiquetaDelta} />
+        <TileGrande titulo="📈 Beneficio" valor={eur(m.beneficio)} color={m.beneficio >= 0 ? VERDE : ROJO} delta={m.deltaBeneficio} etiquetaDelta={etiquetaDelta} />
         <AnillaMargen margen={m.margen} />
       </div>
 
@@ -159,9 +204,11 @@ function Dashboard() {
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '12px', height: '210px', overflowX: 'auto', paddingTop: '22px', marginTop: '8px' }}>
           {datos.porMes.map((x) => {
             const beneficioMes = Math.round((x.ingresos - x.gastos) * 100) / 100;
+            const dentro = x.mes >= p.desde && x.mes <= p.hasta;
             return (
               <div key={x.mes} title={`${etiquetaMes(x.mes)} · Ingresos ${eur(x.ingresos)} · Gastos ${eur(x.gastos)} · Beneficio ${eur(beneficioMes)}`}
-                   style={{ flex: '1 0 56px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', cursor: 'default' }}>
+                   onClick={() => setPeriodo({ desde: x.mes, hasta: x.mes })}
+                   style={{ flex: '1 0 56px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', cursor: 'pointer', opacity: dentro ? 1 : 0.4 }}>
                 <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#374151' }}>
                   {x.ingresos >= 1000 ? `${Math.round(x.ingresos / 1000)}k` : Math.round(x.ingresos)}
                 </span>
@@ -169,18 +216,19 @@ function Dashboard() {
                   <div style={{ width: '22px', height: `${(x.ingresos / maximo) * 136 + 2}px`, backgroundColor: VERDE, borderRadius: '4px 4px 0 0' }} />
                   <div style={{ width: '22px', height: `${(x.gastos / maximo) * 136 + 2}px`, backgroundColor: ROJO, borderRadius: '4px 4px 0 0' }} />
                 </div>
-                <span style={{ fontSize: '11px', color: x.mes === m.mes ? '#111827' : '#6b7280', fontWeight: x.mes === m.mes ? 'bold' : 'normal' }}>{etiquetaMes(x.mes)}</span>
+                <span style={{ fontSize: '11px', color: dentro ? '#111827' : '#6b7280', fontWeight: dentro ? 'bold' : 'normal' }}>{etiquetaMes(x.mes)}</span>
               </div>
             );
           })}
         </div>
+        <p style={{ fontSize: '12px', color: '#9ca3af', margin: '6px 0 0' }}>💡 Haz clic en cualquier mes de la gráfica para ver solo sus números; el periodo elegido queda resaltado.</p>
       </div>
 
       <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
         {/* Gastos por categoría */}
         <div style={{ flex: '1 1 340px', backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-          <h3 style={{ marginTop: 0 }}>¿En qué se va el dinero? <span style={{ fontSize: '13px', color: '#9ca3af', fontWeight: 'normal' }}>({nombreMes})</span></h3>
-          {gastosCategorias.length === 0 && <p style={{ color: '#9ca3af' }}>Sin gastos este mes todavía.</p>}
+          <h3 style={{ marginTop: 0 }}>¿En qué se va el dinero? <span style={{ fontSize: '13px', color: '#9ca3af', fontWeight: 'normal' }}>({nombrePeriodo})</span></h3>
+          {gastosCategorias.length === 0 && <p style={{ color: '#9ca3af' }}>Sin gastos en este periodo.</p>}
           {gastosCategorias.map((c) => {
             const pct = Math.round((c.total / totalGastosMes) * 100);
             const esSin = c.categoria === 'Sin clasificar';
