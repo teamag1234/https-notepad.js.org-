@@ -32,12 +32,12 @@ function Pagos() {
 
   const enviarUno = async (m) => {
     const previo = m.envio ? `\n(Ya se le envió el ${new Date(m.envio.ultimo).toLocaleDateString('es-ES')} — esto le enviará otro)` : '';
-    if (!confirm(`¿Enviar AHORA el recordatorio de ${eur(m.debe)} a ${m.nombre} <${m.email}>?${previo}\n\nDespués, el seguimiento semanal será automático hasta que llegue su pago.`)) return;
+    if (!confirm(`¿Enviar AHORA el recordatorio de ${eur(m.debe)} a ${m.nombre} <${m.email}>?${previo}\n\nDespués recibirá seguimiento automático (cada 2 días, y diario si sigue sin pagar) hasta que llegue su pago.`)) return;
     setTrabajando(true);
     setError('');
     try {
       const r = await apiFetch('/api/admin/recordatorios', { method: 'POST', body: JSON.stringify({ accion: 'enviar-uno', id: m.id }) });
-      setAviso(`✅ Recordatorio enviado a ${r.enviado} <${r.email}>. Seguimiento semanal activado hasta que pague.`);
+      setAviso(`✅ Recordatorio enviado a ${r.enviado} <${r.email}>. Seguimiento automático activado hasta que pague.`);
       cargar();
     } catch (e) { setError(e.message); }
     setTrabajando(false);
@@ -74,9 +74,9 @@ function Pagos() {
           <strong>Revisión uno a uno</strong>
           <div style={{ fontSize: '13px', color: '#374151' }}>
             Revisa cada email con "👁 Ver email" y dispara el primero con <strong>"📤 Enviar email"</strong>.
-            A partir de ahí, ese alumno recibe un recordatorio automático <strong>cada lunes</strong> hasta que su
-            transferencia aparezca en el banco (entonces se marca pagado y se corta solo).
-            Los alumnos a los que no envíes nada, no reciben nada.
+            A partir de ahí, ese alumno recibe recordatorios automáticos: <strong>cada 2 días</strong> los primeros,
+            y <strong>cada día</strong> si sigue sin pagar — hasta que su transferencia aparezca en el banco
+            (entonces se marca pagado y se corta solo). Los alumnos a los que no envíes nada, no reciben nada.
           </div>
         </div>
         <button onClick={prueba} disabled={trabajando} style={boton('#2563eb')}>📧 Enviarme una prueba</button>

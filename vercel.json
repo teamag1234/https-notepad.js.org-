@@ -18,7 +18,7 @@
     },
     {
       "path": "/api/admin/recordatorios-cron",
-      "schedule": "0 9 * * 1"
+      "schedule": "0 7 * * *"
     }
   ]
 }

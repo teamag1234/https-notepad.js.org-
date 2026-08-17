@@ -3,10 +3,12 @@ import { enviarSeguimientos } from '../../../../lib/admin/recordatorios.js';
 
 export const dynamic = 'force-dynamic';
 
-// Cron semanal de seguimientos (lunes 9:00 UTC). Solo escribe a los alumnos a
-// los que ya se les envió el primer recordatorio a mano desde el panel y que
-// sigan debiendo dinero; cuando su pago se concilia, salen de morosos y el
-// seguimiento se corta solo. Se puede apagar todo con RECORDATORIOS_PAUSADOS=si.
+// Cron diario de seguimientos (7:00 UTC, tras la sincronización del banco de
+// las 6:00 para no avisar a quien pagó ayer). Solo escribe a los alumnos a los
+// que ya se les envió el primer recordatorio a mano desde el panel y que sigan
+// debiendo dinero: cada 2 días los primeros avisos y diario si sigue sin pagar.
+// Cuando su pago se concilia, salen de morosos y el seguimiento se corta solo.
+// Se puede apagar todo con RECORDATORIOS_PAUSADOS=si.
 export async function GET(request) {
   if (request.headers.get('authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
