@@ -83,7 +83,7 @@ function Banco() {
             edita <code>ENABLE_BANKING_PRIVATE_KEY</code> y vuelve a pegar el archivo de clave completo
             (desde -----BEGIN hasta -----END-----). Después: Deployments → ⋯ → Redeploy.
           </p>
-          <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#92400e' }}>Detalle técnico: {estado.diagnostico.error}</p>
+          <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#92400e' }}>Detalle técnico: {estado.diagnostico.error} · huella {estado.diagnostico.huella}</p>
         </div>
       )}
       {estado && estado.configurado && estado.cuentas.length === 0 && (
