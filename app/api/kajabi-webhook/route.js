@@ -1,5 +1,34 @@
 import { startOnboarding } from '../../../lib/onboarding.js';
 import { createRecord } from '../../../lib/airtable.js';
+import { dbConfigurada } from '../../../lib/admin/db.js';
+import { crearMovimiento, categorizarIngreso } from '../../../lib/admin/finanzas.js';
+
+// Registra el pago como INGRESO en la base de datos del panel de administración.
+// Nunca rompe el flujo del webhook: si falla o no hay base de datos, se ignora.
+async function registrarIngresoAdmin({ payload, data, name, email, courseName }) {
+  try {
+    if (!dbConfigurada()) return;
+    const importe = Number(
+      data.amount ?? data.price ?? data.total ?? data.amount_paid ?? data.payment_amount ?? NaN,
+    );
+    if (!importe || isNaN(importe)) return;
+    const idExterno = data.transaction_id || data.payment_id || data.id || payload.id;
+    await crearMovimiento({
+      tipo: 'INGRESO',
+      fecha: new Date().toISOString().slice(0, 10),
+      importe,
+      concepto: courseName || 'Pago Kajabi',
+      categoria: categorizarIngreso(courseName),
+      contacto: name,
+      email,
+      fuente: 'KAJABI',
+      referencia: idExterno ? `kajabi-${idExterno}` : null,
+    });
+    console.log(`💰 Ingreso registrado en el panel de administración: ${importe}€ de ${email}`);
+  } catch (error) {
+    console.error('Aviso: no se pudo registrar el ingreso en el panel de administración:', error.message);
+  }
+}
 
 // Webhook que Kajabi llama cuando un alumno compra/rellena una oferta
 // (evento "Offer purchased" / "Form submitted" en Kajabi → Settings → Webhooks).
@@ -40,6 +69,8 @@ export async function POST(req) {
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
+
+    await registrarIngresoAdmin({ payload, data, name, email, courseName });
 
     const record = await startOnboarding({ name, email, courseName });
 

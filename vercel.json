@@ -11,6 +11,14 @@
     {
       "path": "/api/check-pending-onboarding",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/admin/sync-banco",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/admin/recordatorios-cron",
+      "schedule": "0 7 * * *"
     }
   ]
 }
