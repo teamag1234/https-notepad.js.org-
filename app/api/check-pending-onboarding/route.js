@@ -1,4 +1,5 @@
 import { checkPendingOnboardings } from '../../../lib/onboarding.js';
+import { checkPendingWhatsAppOnboardings } from '../../../lib/whatsapp-onboarding.js';
 
 // Cron diario: reenvia el enlace de onboarding a alumnos que aun no han
 // entrado en Telegram.
@@ -11,13 +12,15 @@ export async function GET(req) {
       }
     }
 
-    console.log('🔄 Revisando onboardings pendientes de Telegram');
-    const result = await checkPendingOnboardings();
+    console.log('🔄 Revisando onboardings pendientes de Telegram y WhatsApp');
+    const telegram = await checkPendingOnboardings();
+    const whatsapp = await checkPendingWhatsAppOnboardings();
 
     return new Response(
       JSON.stringify({
         success: true,
-        ...result,
+        telegram,
+        whatsapp,
         timestamp: new Date().toISOString(),
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }

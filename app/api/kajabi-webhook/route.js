@@ -1,4 +1,5 @@
 import { startOnboarding } from '../../../lib/onboarding.js';
+import { startWhatsAppOnboarding } from '../../../lib/whatsapp-onboarding.js';
 import { createRecord } from '../../../lib/airtable.js';
 import { dbConfigurada } from '../../../lib/admin/db.js';
 import { crearMovimiento, categorizarIngreso } from '../../../lib/admin/finanzas.js';
@@ -72,7 +73,12 @@ export async function POST(req) {
 
     await registrarIngresoAdmin({ payload, data, name, email, courseName });
 
-    const record = await startOnboarding({ name, email, courseName });
+    // Primero probamos el canal Telegram; si la oferta no esta ahi,
+    // probamos el canal WhatsApp. Si no esta en ninguno, se ignora.
+    let record = await startOnboarding({ name, email, courseName });
+    if (record?.ignored) {
+      record = await startWhatsAppOnboarding({ name, email, courseName });
+    }
 
     const message = record?.ignored
       ? `Oferta sin curso de Telegram configurado, ignorada: ${courseName}`
