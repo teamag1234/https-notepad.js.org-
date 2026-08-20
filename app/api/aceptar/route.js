@@ -38,7 +38,7 @@ export async function POST(req) {
         headers: { 'Content-Type': 'application/json' },
       });
     }
-    return new Response(JSON.stringify({ ok: true, whatsappLink: result.whatsappLink }), {
+    return new Response(JSON.stringify({ ok: true, whatsappLink: result.whatsappLink, videoUrl: result.videoUrl }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
