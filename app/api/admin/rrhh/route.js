@@ -13,13 +13,21 @@ export async function GET(request) {
   if (!auth.ok) return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
   if (!dbConfigurada()) return NextResponse.json({ success: false, error: 'Falta la base de datos (DATABASE_URL)' }, { status: 500 });
   try {
-    const id = new URL(request.url).searchParams.get('trabajador');
+    const params = new URL(request.url).searchParams;
+    const id = params.get('trabajador');
     if (id) {
-      const detalle = await detalleTrabajador(Number(id));
+      const detalle = await detalleTrabajador(Number(id), params.get('perfil') || null);
       return NextResponse.json({ success: true, data: detalle });
     }
     const trabajadores = await listarTrabajadores();
-    return NextResponse.json({ success: true, data: { trabajadores, blobConfigurado: !!process.env.BLOB_READ_WRITE_TOKEN } });
+    return NextResponse.json({
+      success: true,
+      data: {
+        trabajadores,
+        blobConfigurado: !!process.env.BLOB_READ_WRITE_TOKEN,
+        fichajeIntegrado: trabajadores[0]?.fichajeIntegrado ?? false,
+      },
+    });
   } catch (error) {
     console.error('Error en /api/admin/rrhh:', error.message);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
