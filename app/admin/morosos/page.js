@@ -7,17 +7,33 @@ function Morosos() {
   const { apiFetch, clave } = useAdmin();
   const [datos, setDatos] = useState(null);
   const [error, setError] = useState('');
+  const [cargando, setCargando] = useState(false);
+  const [actualizado, setActualizado] = useState(null);
 
   const cargar = useCallback(() => {
-    apiFetch('/api/admin/morosos').then(setDatos).catch((e) => setError(e.message));
+    setCargando(true);
+    setError('');
+    apiFetch('/api/admin/morosos')
+      .then((d) => { setDatos(d); setActualizado(new Date()); })
+      .catch((e) => setError(e.message))
+      .finally(() => setCargando(false));
   }, [apiFetch]);
 
   useEffect(() => { if (clave) cargar(); }, [clave, cargar]);
 
   return (
     <div>
-      <h2 style={{ marginTop: 0 }}>Morosos</h2>
-      <p style={{ color: '#6b7280' }}>Lista en vivo desde Airtable (vista "MOROSOS ⚠️" de CURSOS KAJABI). Márcalos o desmárcalos en Airtable y aquí se refleja al momento.</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        <h2 style={{ margin: 0 }}>Morosos</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {actualizado && <span style={{ fontSize: '12px', color: '#9ca3af' }}>Actualizado a las {actualizado.toLocaleTimeString('es-ES')}</span>}
+          <button onClick={cargar} disabled={cargando}
+                  style={{ padding: '8px 16px', backgroundColor: '#111827', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', opacity: cargando ? 0.5 : 1 }}>
+            {cargando ? '⏳ Actualizando…' : '🔄 Actualizar desde Airtable'}
+          </button>
+        </div>
+      </div>
+      <p style={{ color: '#6b7280' }}>Lista en vivo desde Airtable (vista "MOROSOS ⚠️" de CURSOS KAJABI). Si marcas o desmarcas morosos en Airtable, pulsa Actualizar para verlo aquí.</p>
       {error && <p style={{ backgroundColor: '#fee2e2', padding: '10px', borderRadius: '6px' }}>{error}</p>}
       {!datos && !error && <p>Cargando…</p>}
       {datos && (
