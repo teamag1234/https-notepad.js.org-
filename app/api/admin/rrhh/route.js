@@ -25,7 +25,7 @@ export async function GET(request) {
       success: true,
       data: {
         trabajadores,
-        blobConfigurado: !!process.env.BLOB_READ_WRITE_TOKEN,
+        blobConfigurado: !!(process.env.BLOB_STORE_ID || process.env.BLOB_READ_WRITE_TOKEN),
         fichajeIntegrado: diagAgapp.definida && diagAgapp.ok === true,
         diagAgapp,
       },

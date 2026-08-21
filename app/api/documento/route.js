@@ -25,6 +25,10 @@ export async function POST(request) {
     if (!body.token) return NextResponse.json({ success: false, error: 'Enlace no válido' }, { status: 400 });
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null;
     const resultado = await firmarDocumento(body.token, body.nombre, ip);
+    // Los archivos en almacenamiento privado se sirven por nuestra ruta segura
+    if (/\.private\.blob\.vercel-storage\.com\//.test(resultado.url || '')) {
+      resultado.url = `/api/documento/archivo?t=${encodeURIComponent(body.token)}`;
+    }
     return NextResponse.json({ success: true, data: resultado });
   } catch (error) {
     return NextResponse.json({ success: false, error: error.message }, { status: 400 });

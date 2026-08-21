@@ -51,6 +51,21 @@ function RRHH() {
     setAltaAbierta(false);
   };
 
+  const abrirDocumento = async (d) => {
+    // Los archivos privados se sirven autenticados; los enlaces (Drive) se abren directo
+    if (!/\.private\.blob\.vercel-storage\.com\//.test(d.url)) {
+      window.open(d.url, '_blank');
+      return;
+    }
+    try {
+      const key = localStorage.getItem('agAdminKey');
+      const r = await fetch(`/api/admin/rrhh/archivo?id=${d.id}`, { headers: { 'x-admin-key': key || '' } });
+      if (!r.ok) throw new Error('No se pudo abrir el documento');
+      const blob = await r.blob();
+      window.open(URL.createObjectURL(blob), '_blank');
+    } catch (e) { setError(e.message); }
+  };
+
   const subirDocumento = async (e) => {
     e.preventDefault();
     setTrabajando(true);
@@ -197,7 +212,7 @@ function RRHH() {
               {detalle && detalle.documentos.length === 0 && <p style={{ color: '#9ca3af' }}>Sin documentos todavía.</p>}
               {detalle && detalle.documentos.map((d) => (
                 <div key={d.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 4px', borderTop: '1px solid #f3f4f6', fontSize: '14px', gap: '8px', flexWrap: 'wrap' }}>
-                  <span>{d.tipo === 'NÓMINA' ? '💶' : d.tipo === 'CONTRATO' ? '📑' : '📄'} <a href={d.url} target="_blank" style={{ color: '#2563eb' }}>{d.titulo}</a> {d.mes && <span style={{ color: '#9ca3af', fontSize: '12px' }}>({d.mes})</span>}</span>
+                  <span>{d.tipo === 'NÓMINA' ? '💶' : d.tipo === 'CONTRATO' ? '📑' : '📄'} <a onClick={() => abrirDocumento(d)} style={{ color: '#2563eb', cursor: 'pointer' }}>{d.titulo}</a> {d.mes && <span style={{ color: '#9ca3af', fontSize: '12px' }}>({d.mes})</span>}</span>
                   <span style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     {d.firmado ? (
                       <span title={`Firmado por ${d.firma_nombre || ''}`} style={{ fontSize: '12px', color: '#059669', fontWeight: 'bold' }}>✍️ firmado {d.firmado}</span>
