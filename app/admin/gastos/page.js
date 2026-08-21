@@ -55,6 +55,21 @@ function Gastos() {
     }
   };
 
+  const limpiarDuplicados = async () => {
+    if (!confirm('Buscará movimientos del banco repetidos (mismo día, importe y concepto) y eliminará las copias dejando solo uno. ¿Continuar?')) return;
+    setGuardando(true);
+    setError('');
+    try {
+      const r = await apiFetch('/api/admin/limpiar-duplicados', { method: 'POST' });
+      let msg = `🧹 ${r.eliminados.length} duplicados eliminados.`;
+      if (r.eliminados.length) msg += ' ' + r.eliminados.slice(0, 5).map((e) => `${e.concepto?.substring(0, 30)} (${e.fecha})`).join('; ') + (r.eliminados.length > 5 ? '…' : '');
+      if (r.sospechosos.length) msg += ` ⚠️ Quedan ${r.sospechosos.length} posibles duplicados con concepto distinto — revísalos en la lista.`;
+      alert(msg);
+      cargar();
+    } catch (err) { setError(err.message); }
+    setGuardando(false);
+  };
+
   const borrar = async (id) => {
     if (!confirm('¿Borrar este gasto?')) return;
     try {
@@ -104,9 +119,10 @@ function Gastos() {
         </button>
       </form>
 
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
         <button style={chip(filtro === 'todos')} onClick={() => setFiltro('todos')}>Todos ({(gastos || []).length})</button>
         <button style={chip(filtro === 'sin')} onClick={() => setFiltro('sin')}>⚠️ Sin clasificar ({numSin})</button>
+        <button style={{ ...chip(false), marginLeft: 'auto' }} onClick={limpiarDuplicados} disabled={guardando}>🧹 Quitar duplicados del banco</button>
       </div>
 
       <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
