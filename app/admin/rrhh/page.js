@@ -15,7 +15,7 @@ function RRHH() {
   const [error, setError] = useState('');
   const [aviso, setAviso] = useState('');
   const [altaAbierta, setAltaAbierta] = useState(false);
-  const [alta, setAlta] = useState({ nombre: '', email: '', puesto: '', fecha_alta: '', dias_vacaciones: 23, pin: '' });
+  const [alta, setAlta] = useState({ nombre: '', email: '', puesto: '', fecha_alta: '', dias_vacaciones: 23 });
   const [doc, setDoc] = useState({ tipo: 'NÓMINA', titulo: '', mes: '', url: '', archivo: null });
   const [vaca, setVaca] = useState({ desde: '', hasta: '', notas: '' });
   const [trabajando, setTrabajando] = useState(false);
@@ -24,13 +24,13 @@ function RRHH() {
     apiFetch('/api/admin/rrhh').then(setDatos).catch((e) => setError(e.message));
   }, [apiFetch]);
 
-  const cargarDetalle = useCallback((id) => {
+  const cargarDetalle = useCallback((id, perfil) => {
     setDetalle(null);
-    apiFetch(`/api/admin/rrhh?trabajador=${id}`).then(setDetalle).catch((e) => setError(e.message));
+    apiFetch(`/api/admin/rrhh?trabajador=${id}${perfil ? `&perfil=${perfil}` : ''}`).then(setDetalle).catch((e) => setError(e.message));
   }, [apiFetch]);
 
   useEffect(() => { if (clave) cargar(); }, [clave, cargar]);
-  useEffect(() => { if (sel) cargarDetalle(sel.id); }, [sel, cargarDetalle]);
+  useEffect(() => { if (sel) cargarDetalle(sel.id, sel.perfilAgapp); }, [sel, cargarDetalle]);
 
   const accion = async (cuerpo, mensaje) => {
     setTrabajando(true);
@@ -39,7 +39,7 @@ function RRHH() {
       await apiFetch('/api/admin/rrhh', { method: 'POST', body: JSON.stringify(cuerpo) });
       if (mensaje) setAviso(mensaje);
       cargar();
-      if (sel) cargarDetalle(sel.id);
+      if (sel) cargarDetalle(sel.id, sel.perfilAgapp);
     } catch (e) { setError(e.message); }
     setTrabajando(false);
   };
@@ -47,7 +47,7 @@ function RRHH() {
   const crearTrabajador = async (e) => {
     e.preventDefault();
     await accion({ accion: 'crear-trabajador', ...alta }, `✅ ${alta.nombre} dado de alta`);
-    setAlta({ nombre: '', email: '', puesto: '', fecha_alta: '', dias_vacaciones: 23, pin: '' });
+    setAlta({ nombre: '', email: '', puesto: '', fecha_alta: '', dias_vacaciones: 23 });
     setAltaAbierta(false);
   };
 
@@ -77,7 +77,7 @@ function RRHH() {
       }
       setAviso('✅ Documento guardado');
       setDoc({ tipo: doc.tipo, titulo: '', mes: '', url: '', archivo: null });
-      cargarDetalle(sel.id);
+      cargarDetalle(sel.id, sel.perfilAgapp);
       cargar();
     } catch (e2) { setError(e2.message); }
     setTrabajando(false);
@@ -92,14 +92,28 @@ function RRHH() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
         <h2 style={{ margin: '0 0 12px' }}>👥 RRHH {t && <span style={{ color: '#9ca3af' }}>· {t.nombre}</span>}</h2>
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           {sel && <button onClick={() => setSel(null)} style={{ padding: '8px 14px', border: '1px solid #d1d5db', background: 'white', borderRadius: '6px', cursor: 'pointer' }}>← Volver al equipo</button>}
-          <a href="/fichar" target="_blank" style={{ padding: '8px 14px', border: '1px solid #d1d5db', background: 'white', borderRadius: '6px', textDecoration: 'none', color: '#374151' }}>🕐 Página de fichar</a>
+          <span style={{ fontSize: '13px', color: datos.fichajeIntegrado ? '#059669' : '#9ca3af' }}>
+            {datos.fichajeIntegrado ? '🔗 Fichaje conectado con app.ag-app.es' : '⚪ Fichaje sin conectar'}
+          </span>
           {!sel && <button onClick={() => setAltaAbierta(!altaAbierta)} style={{ padding: '8px 14px', backgroundColor: '#111827', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>+ Alta trabajador</button>}
         </div>
       </div>
       {aviso && <p style={{ backgroundColor: '#dcfce7', padding: '10px', borderRadius: '6px' }}>{aviso}</p>}
       {error && <p style={{ backgroundColor: '#fee2e2', padding: '10px', borderRadius: '6px' }}>{error}</p>}
+
+      {!datos.fichajeIntegrado && (
+        <div style={{ backgroundColor: '#fef3c7', borderRadius: '10px', padding: '14px 18px', marginBottom: '16px', fontSize: '14px' }}>
+          <strong>🔗 Conecta el fichaje de app.ag-app.es</strong> para ver aquí las horas reales del equipo
+          (el equipo sigue fichando en su app de siempre, este panel solo lee):
+          <ol style={{ margin: '8px 0 0', paddingLeft: '20px', lineHeight: 1.9 }}>
+            <li>Entra en <strong>supabase.com</strong> con la cuenta donde está el proyecto de la app</li>
+            <li>Proyecto → ⚙️ <strong>Project Settings</strong> → <strong>API Keys</strong> → copia la clave <strong>secreta</strong> (service_role / secret)</li>
+            <li>En Vercel → Environment Variables añade <code>AGAPP_SUPABASE_KEY</code> con esa clave → Redeploy</li>
+          </ol>
+        </div>
+      )}
 
       {/* ALTA */}
       {altaAbierta && !sel && (
@@ -109,7 +123,6 @@ function RRHH() {
           <div style={campo()}><label style={label}>Puesto</label><input value={alta.puesto} onChange={(e) => setAlta({ ...alta, puesto: e.target.value })} style={inputStyle} placeholder="Teacher, Ventas…" /></div>
           <div style={campo('0 1 140px')}><label style={label}>Fecha alta</label><input type="date" value={alta.fecha_alta} onChange={(e) => setAlta({ ...alta, fecha_alta: e.target.value })} style={inputStyle} /></div>
           <div style={campo('0 1 110px')}><label style={label}>Días vacaciones/año</label><input type="number" value={alta.dias_vacaciones} onChange={(e) => setAlta({ ...alta, dias_vacaciones: Number(e.target.value) })} style={inputStyle} /></div>
-          <div style={campo('0 1 110px')}><label style={label}>PIN fichaje</label><input value={alta.pin} onChange={(e) => setAlta({ ...alta, pin: e.target.value })} style={inputStyle} placeholder="4 dígitos" /></div>
           <button type="submit" disabled={trabajando} style={{ padding: '10px 20px', backgroundColor: '#059669', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>Dar de alta</button>
         </form>
       )}
@@ -119,8 +132,8 @@ function RRHH() {
         <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
           {datos.trabajadores.length === 0 && (
             <div style={{ backgroundColor: '#f0f9ff', borderRadius: '10px', padding: '20px', width: '100%' }}>
-              Todavía no hay trabajadores. Pulsa <strong>"+ Alta trabajador"</strong> para crear la primera ficha
-              (con su PIN podrá fichar entrada y salida desde <code>/fichar</code>).
+              Todavía no hay trabajadores. Pulsa <strong>"+ Alta trabajador"</strong> para crear la primera ficha,
+              o conecta el fichaje de app.ag-app.es y el equipo aparecerá aquí automáticamente.
             </div>
           )}
           {datos.trabajadores.map((x) => (
@@ -135,7 +148,7 @@ function RRHH() {
                 <span>🏖 <strong>{x.vacacionesRestantes}</strong>/{x.dias_vacaciones} días</span>
                 <span>📄 {x.numDocumentos}</span>
               </div>
-              {!x.tiene_pin && <div style={{ fontSize: '12px', color: '#d97706', marginTop: '8px' }}>⚠️ Sin PIN: no puede fichar</div>}
+              {datos.fichajeIntegrado && !x.perfilAgapp && <div style={{ fontSize: '12px', color: '#d97706', marginTop: '8px' }}>⚠️ Sin cuenta en app.ag-app.es (empareja por email)</div>}
             </div>
           ))}
         </div>
@@ -204,7 +217,7 @@ function RRHH() {
                 </div>
               ))}
 
-              <h3>🕐 Últimos fichajes</h3>
+              <h3>🕐 Últimos fichajes {t.perfilAgapp && <span style={{ fontSize: '12px', color: '#059669', fontWeight: 'normal' }}>(desde app.ag-app.es)</span>}</h3>
               {detalle && detalle.fichajes.length === 0 && <p style={{ color: '#9ca3af' }}>Sin fichajes todavía.</p>}
               {detalle && detalle.fichajes.map((f) => (
                 <div key={f.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 4px', borderTop: '1px solid #f3f4f6', fontSize: '13px' }}>
@@ -244,7 +257,6 @@ function FormEditar({ t, onGuardar, trabajando }) {
       <div style={campo('1')}><label style={label}>Puesto</label><input value={f.puesto} onChange={(e) => setF({ ...f, puesto: e.target.value })} style={inputStyle} /></div>
       <div style={campo('1')}><label style={label}>Fecha de alta</label><input type="date" value={f.fecha_alta} onChange={(e) => setF({ ...f, fecha_alta: e.target.value })} style={inputStyle} /></div>
       <div style={campo('1')}><label style={label}>Días de vacaciones/año</label><input type="number" value={f.dias_vacaciones} onChange={(e) => setF({ ...f, dias_vacaciones: Number(e.target.value) })} style={inputStyle} /></div>
-      <div style={campo('1')}><label style={label}>Nuevo PIN de fichaje (vacío = no cambiar)</label><input value={f.pin} onChange={(e) => setF({ ...f, pin: e.target.value })} style={inputStyle} placeholder="••••" /></div>
       <div style={campo('1')}><label style={label}>Notas</label><textarea value={f.notas} onChange={(e) => setF({ ...f, notas: e.target.value })} style={{ ...inputStyle, minHeight: '60px' }} /></div>
       <label style={{ fontSize: '14px', display: 'flex', gap: '8px', alignItems: 'center' }}>
         <input type="checkbox" checked={f.activo} onChange={(e) => setF({ ...f, activo: e.target.checked })} /> Activo en plantilla
