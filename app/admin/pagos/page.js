@@ -54,6 +54,27 @@ function Pagos() {
     setTrabajando(false);
   };
 
+  const pausar = async (m) => {
+    if (!confirm(`¿Pausar los recordatorios de ${m.nombre}?\n\nNo recibirá ningún email (ni automático ni manual) hasta que lo reanudes. Útil si pagó en efectivo o habéis llegado a un acuerdo.\n\nRecuerda también cerrar sus meses en Airtable cuando confirmes el pago.`)) return;
+    setTrabajando(true);
+    try {
+      await apiFetch('/api/admin/recordatorios', { method: 'POST', body: JSON.stringify({ accion: 'pausar', id: m.id, nombre: m.nombre }) });
+      setAviso(`⏸ Recordatorios de ${m.nombre} pausados.`);
+      cargar();
+    } catch (e) { setError(e.message); }
+    setTrabajando(false);
+  };
+
+  const reanudar = async (m) => {
+    setTrabajando(true);
+    try {
+      await apiFetch('/api/admin/recordatorios', { method: 'POST', body: JSON.stringify({ accion: 'reanudar', id: m.id }) });
+      setAviso(`▶️ Recordatorios de ${m.nombre} reanudados.`);
+      cargar();
+    } catch (e) { setError(e.message); }
+    setTrabajando(false);
+  };
+
   const boton = (bg) => ({ padding: '10px 18px', backgroundColor: bg, color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', opacity: trabajando ? 0.5 : 1 });
 
   if (error && !datos) return <p style={{ backgroundColor: '#fee2e2', padding: '12px', borderRadius: '6px' }}>{error}</p>;
@@ -110,7 +131,9 @@ function Pagos() {
                     <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: 'bold', color: '#dc2626', whiteSpace: 'nowrap' }}>{eur(m.debe)}</td>
                     <td style={{ padding: '8px 6px', fontSize: '13px' }}>{m.email}</td>
                     <td style={{ padding: '8px 6px', fontSize: '12px' }}>
-                      {m.envio ? (
+                      {m.pausado ? (
+                        <span style={{ color: '#d97706', fontWeight: 'bold' }}>⏸ pausado (efectivo/acuerdo)</span>
+                      ) : m.envio ? (
                         <span style={{ color: '#059669' }}>🟢 activo · {m.envio.enviados} enviado{m.envio.enviados > 1 ? 's' : ''}, último {new Date(m.envio.ultimo).toLocaleDateString('es-ES')}</span>
                       ) : (
                         <span style={{ color: '#9ca3af' }}>— sin enviar</span>
@@ -120,9 +143,20 @@ function Pagos() {
                       <button onClick={() => setAbierto(abierto === m.id ? null : m.id)} style={{ border: '1px solid #d1d5db', background: 'white', borderRadius: '6px', padding: '5px 10px', cursor: 'pointer', fontSize: '12px', marginRight: '6px' }}>
                         {abierto === m.id ? 'Cerrar' : '👁 Ver email'}
                       </button>
-                      <button onClick={() => enviarUno(m)} disabled={trabajando} style={{ border: 'none', backgroundColor: m.envio ? '#6b7280' : '#059669', color: 'white', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', opacity: trabajando ? 0.5 : 1 }}>
-                        📤 {m.envio ? 'Reenviar' : 'Enviar email'}
-                      </button>
+                      {m.pausado ? (
+                        <button onClick={() => reanudar(m)} disabled={trabajando} style={{ border: 'none', backgroundColor: '#059669', color: 'white', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', opacity: trabajando ? 0.5 : 1 }}>
+                          ▶️ Reanudar
+                        </button>
+                      ) : (
+                        <>
+                          <button onClick={() => enviarUno(m)} disabled={trabajando} style={{ border: 'none', backgroundColor: m.envio ? '#6b7280' : '#059669', color: 'white', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', opacity: trabajando ? 0.5 : 1, marginRight: '6px' }}>
+                            📤 {m.envio ? 'Reenviar' : 'Enviar email'}
+                          </button>
+                          <button onClick={() => pausar(m)} disabled={trabajando} title="Pausar recordatorios (pago en efectivo/acuerdo)" style={{ border: '1px solid #d97706', backgroundColor: 'white', color: '#d97706', borderRadius: '6px', padding: '5px 10px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', opacity: trabajando ? 0.5 : 1 }}>
+                            ⏸ Pausar
+                          </button>
+                        </>
+                      )}
                     </td>
                   </tr>
                   {abierto === m.id && (
