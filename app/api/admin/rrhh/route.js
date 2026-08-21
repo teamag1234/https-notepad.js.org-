@@ -5,6 +5,7 @@ import {
   listarTrabajadores, crearTrabajador, actualizarTrabajador, detalleTrabajador,
   crearDocumento, borrarDocumento, crearVacaciones, cambiarEstadoVacaciones, borrarVacaciones,
 } from '../../../../lib/admin/rrhh.js';
+import { diagnosticoAgapp } from '../../../../lib/admin/agapp.js';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,13 +20,14 @@ export async function GET(request) {
       const detalle = await detalleTrabajador(Number(id), params.get('perfil') || null);
       return NextResponse.json({ success: true, data: detalle });
     }
-    const trabajadores = await listarTrabajadores();
+    const [trabajadores, diagAgapp] = await Promise.all([listarTrabajadores(), diagnosticoAgapp()]);
     return NextResponse.json({
       success: true,
       data: {
         trabajadores,
         blobConfigurado: !!process.env.BLOB_READ_WRITE_TOKEN,
-        fichajeIntegrado: trabajadores[0]?.fichajeIntegrado ?? false,
+        fichajeIntegrado: diagAgapp.definida && diagAgapp.ok === true,
+        diagAgapp,
       },
     });
   } catch (error) {

@@ -103,7 +103,19 @@ function RRHH() {
       {aviso && <p style={{ backgroundColor: '#dcfce7', padding: '10px', borderRadius: '6px' }}>{aviso}</p>}
       {error && <p style={{ backgroundColor: '#fee2e2', padding: '10px', borderRadius: '6px' }}>{error}</p>}
 
-      {!datos.fichajeIntegrado && (
+      {datos.diagAgapp && datos.diagAgapp.definida && datos.diagAgapp.ok === false && (
+        <div style={{ backgroundColor: '#fee2e2', borderRadius: '10px', padding: '14px 18px', marginBottom: '16px', fontSize: '14px' }}>
+          <strong>⚠️ La clave AGAPP_SUPABASE_KEY está puesta en Vercel pero no funciona.</strong>
+          <p style={{ margin: '6px 0 0' }}>
+            Se guardaron {datos.diagAgapp.caracteres} caracteres (empieza por "{datos.diagAgapp.prefijo}…").
+            {String(datos.diagAgapp.prefijo || '').includes('•') || datos.diagAgapp.error?.startsWith('401')
+              ? ' Parece una clave incorrecta o pegada desde el texto oculto (puntitos): vuelve a Supabase, usa el botón de COPIAR junto a la clave secreta, pégala de nuevo en Vercel y haz Redeploy.'
+              : ' Revisa que sea la clave secreta (service_role / sb_secret_…) y no la publishable, y haz Redeploy tras guardar.'}
+          </p>
+          <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#92400e' }}>Detalle técnico: {datos.diagAgapp.error}</p>
+        </div>
+      )}
+      {!datos.fichajeIntegrado && !(datos.diagAgapp && datos.diagAgapp.definida) && (
         <div style={{ backgroundColor: '#fef3c7', borderRadius: '10px', padding: '14px 18px', marginBottom: '16px', fontSize: '14px' }}>
           <strong>🔗 Conecta el fichaje de app.ag-app.es</strong> para ver aquí las horas reales del equipo
           (el equipo sigue fichando en su app de siempre, este panel solo lee):
