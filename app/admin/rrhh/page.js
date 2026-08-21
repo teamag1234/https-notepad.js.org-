@@ -196,9 +196,16 @@ function RRHH() {
               {!detalle && <p>Cargando…</p>}
               {detalle && detalle.documentos.length === 0 && <p style={{ color: '#9ca3af' }}>Sin documentos todavía.</p>}
               {detalle && detalle.documentos.map((d) => (
-                <div key={d.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 4px', borderTop: '1px solid #f3f4f6', fontSize: '14px' }}>
+                <div key={d.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 4px', borderTop: '1px solid #f3f4f6', fontSize: '14px', gap: '8px', flexWrap: 'wrap' }}>
                   <span>{d.tipo === 'NÓMINA' ? '💶' : d.tipo === 'CONTRATO' ? '📑' : '📄'} <a href={d.url} target="_blank" style={{ color: '#2563eb' }}>{d.titulo}</a> {d.mes && <span style={{ color: '#9ca3af', fontSize: '12px' }}>({d.mes})</span>}</span>
                   <span style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    {d.firmado ? (
+                      <span title={`Firmado por ${d.firma_nombre || ''}`} style={{ fontSize: '12px', color: '#059669', fontWeight: 'bold' }}>✍️ firmado {d.firmado}</span>
+                    ) : d.avisado ? (
+                      <span style={{ fontSize: '12px', color: '#d97706', fontWeight: 'bold' }}>⏳ enviado · sin firmar</span>
+                    ) : (
+                      <span style={{ fontSize: '12px', color: '#9ca3af' }}>— sin aviso (¿email del trabajador?)</span>
+                    )}
                     <span style={{ color: '#9ca3af', fontSize: '12px' }}>{d.subido}</span>
                     <button onClick={() => accion({ accion: 'borrar-documento', id: d.id })} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#9ca3af' }}>🗑️</button>
                   </span>

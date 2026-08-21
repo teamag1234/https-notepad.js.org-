@@ -55,7 +55,8 @@ export async function POST(request) {
         if (!body.trabajador_id || !body.titulo || !body.url) {
           return NextResponse.json({ success: false, error: 'Faltan datos del documento' }, { status: 400 });
         }
-        const creado = await crearDocumento(body);
+        const origen = process.env.ADMIN_BASE_URL || new URL(request.url).origin;
+        const creado = await crearDocumento({ ...body, origen });
         return NextResponse.json({ success: true, data: creado });
       }
       case 'borrar-documento': {

@@ -30,7 +30,8 @@ export async function POST(request) {
       access: 'public',
       addRandomSuffix: true,
     });
-    const creado = await crearDocumento({ trabajador_id: trabajadorId, tipo, titulo, mes, url: blob.url });
+    const origen = process.env.ADMIN_BASE_URL || new URL(request.url).origin;
+    const creado = await crearDocumento({ trabajador_id: trabajadorId, tipo, titulo, mes, url: blob.url, origen });
     return NextResponse.json({ success: true, data: { ...creado, url: blob.url } });
   } catch (error) {
     console.error('Error subiendo documento:', error.message);
