@@ -18,6 +18,7 @@ function RRHH() {
   const [alta, setAlta] = useState({ nombre: '', email: '', puesto: '', fecha_alta: '', dias_vacaciones: 23 });
   const [doc, setDoc] = useState({ tipo: 'NÓMINA', titulo: '', mes: '', url: '', archivo: null });
   const [vaca, setVaca] = useState({ desde: '', hasta: '', notas: '' });
+  const [emailRrhh, setEmailRrhh] = useState('');
   const [trabajando, setTrabajando] = useState(false);
 
   const cargar = useCallback(() => {
@@ -164,7 +165,7 @@ function RRHH() {
             </div>
           )}
           {datos.trabajadores.map((x) => (
-            <div key={x.id} onClick={() => setSel(x)} style={{ backgroundColor: 'white', borderRadius: '12px', padding: '18px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', flex: '1 1 260px', maxWidth: '340px', cursor: 'pointer', opacity: x.activo ? 1 : 0.55 }}>
+            <div key={x.id} onClick={() => { setSel(x); setEmailRrhh(x.email_rrhh || ''); }} style={{ backgroundColor: 'white', borderRadius: '12px', padding: '18px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', flex: '1 1 260px', maxWidth: '340px', cursor: 'pointer', opacity: x.activo ? 1 : 0.55 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                 <strong style={{ fontSize: '17px' }}>{x.nombre}</strong>
                 {x.trabajandoAhora ? <span style={{ fontSize: '12px', color: '#059669', fontWeight: 'bold' }}>🟢 trabajando</span> : !x.activo && <span style={{ fontSize: '12px', color: '#9ca3af' }}>inactivo</span>}
@@ -188,6 +189,21 @@ function RRHH() {
             <Card titulo="Horas hoy" valor={`${t.horasHoy}h`} pie={t.trabajandoAhora ? '🟢 trabajando ahora' : 'no está fichado'} />
             <Card titulo="Horas esta semana" valor={`${t.horasSemana}h`} pie={`${t.horasMes}h este mes`} />
             <Card titulo="Vacaciones" valor={`${t.vacacionesRestantes} días`} pie={`de ${t.dias_vacaciones} · usados ${t.vacacionesUsadas}`} color={t.vacacionesRestantes < 5 ? '#d97706' : '#111827'} />
+          </div>
+
+          {/* EMAIL PARA COMUNICACIONES DE RRHH */}
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '14px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', marginBottom: '18px', display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            <div style={campo('0 1 300px')}>
+              <label style={label}>✉️ Email para nóminas y documentos de RRHH</label>
+              <input type="email" value={emailRrhh} onChange={(e) => setEmailRrhh(e.target.value)} style={inputStyle} placeholder={t.email || 'sin email'} />
+            </div>
+            <button onClick={() => accion({ accion: 'editar-trabajador', id: sel.id, campos: { email_rrhh: emailRrhh.trim() } }, '✅ Email de RRHH guardado')} disabled={trabajando}
+                    style={{ padding: '9px 16px', backgroundColor: '#111827', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>Guardar</button>
+            <span style={{ fontSize: '12px', color: '#6b7280', flex: '1 1 260px' }}>
+              {t.email_rrhh
+                ? <>Las nóminas van a <strong>{t.email_rrhh}</strong> (el email principal {t.email || '—'} se mantiene para el fichaje).</>
+                : <>Vacío = se usa el email principal ({t.email || 'sin email'}). Rellénalo si quieres que las nóminas vayan a un correo privado del trabajador.</>}
+            </span>
           </div>
 
           <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
