@@ -20,6 +20,7 @@ function RRHH() {
   const [vaca, setVaca] = useState({ desde: '', hasta: '', notas: '' });
   const [emailRrhh, setEmailRrhh] = useState('');
   const [trabajando, setTrabajando] = useState(false);
+  const [progreso, setProgreso] = useState(0);
 
   const cargar = useCallback(() => {
     apiFetch('/api/admin/rrhh').then(setDatos).catch((e) => setError(e.message));
@@ -73,16 +74,23 @@ function RRHH() {
     setError('');
     try {
       if (doc.archivo) {
-        const form = new FormData();
-        form.append('archivo', doc.archivo);
-        form.append('trabajador_id', sel.id);
-        form.append('tipo', doc.tipo);
-        form.append('titulo', doc.titulo || doc.archivo.name);
-        form.append('mes', doc.mes);
+        // Subida DIRECTA navegador → Blob (sin pasar por el servidor, que
+        // limita las peticiones a 4,5 MB y rompería con PDFs escaneados)
+        const { uploadPresigned } = await import('@vercel/blob/client');
         const key = localStorage.getItem('agAdminKey');
-        const r = await fetch('/api/admin/rrhh/subir', { method: 'POST', headers: { 'x-admin-key': key || '' }, body: form });
-        const j = await r.json();
-        if (!j.success) throw new Error(j.error);
+        const nombreLimpio = doc.archivo.name.replace(/[^\w.\- ]+/g, '_');
+        setProgreso(1);
+        const blob = await uploadPresigned(`rrhh/${sel.id}/${Date.now()}-${nombreLimpio}`, doc.archivo, {
+          access: 'private',
+          handleUploadUrl: '/api/admin/rrhh/subir-directo',
+          headers: { 'x-admin-key': key || '' },
+          multipart: doc.archivo.size > 8 * 1024 * 1024,
+          onUploadProgress: (p) => setProgreso(p.percentage || 0),
+        });
+        await apiFetch('/api/admin/rrhh', {
+          method: 'POST',
+          body: JSON.stringify({ accion: 'crear-documento', trabajador_id: sel.id, tipo: doc.tipo, titulo: doc.titulo || doc.archivo.name, mes: doc.mes, url: blob.url }),
+        });
       } else if (doc.url) {
         await apiFetch('/api/admin/rrhh', {
           method: 'POST',
@@ -95,7 +103,13 @@ function RRHH() {
       setDoc({ tipo: doc.tipo, titulo: '', mes: '', url: '', archivo: null });
       cargarDetalle(sel.id, sel.perfilAgapp);
       cargar();
-    } catch (e2) { setError(e2.message); }
+    } catch (e2) {
+      const msg = /is not valid JSON|Unexpected token/i.test(e2.message)
+        ? 'El servidor devolvió una respuesta inesperada al subir. Recarga la página e inténtalo de nuevo; si sigue fallando, dime el tamaño del archivo.'
+        : e2.message;
+      setError(msg);
+    }
+    setProgreso(0);
     setTrabajando(false);
   };
 
@@ -233,7 +247,9 @@ function RRHH() {
                   <input type="file" onChange={(e) => setDoc({ ...doc, archivo: e.target.files[0] || null })} style={{ fontSize: '13px' }} disabled={!datos.blobConfigurado} />
                 </div>
                 <div style={campo('1 1 170px')}><label style={label}>…o enlace (Drive, etc.)</label><input value={doc.url} onChange={(e) => setDoc({ ...doc, url: e.target.value })} style={inputStyle} placeholder="https://…" /></div>
-                <button type="submit" disabled={trabajando} style={{ padding: '9px 16px', backgroundColor: '#111827', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>Guardar</button>
+                <button type="submit" disabled={trabajando} style={{ padding: '9px 16px', backgroundColor: '#111827', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
+                  {trabajando && progreso > 0 ? `Subiendo… ${Math.round(progreso)}%` : 'Guardar'}
+                </button>
               </form>
               {!detalle && <p>Cargando…</p>}
               {detalle && detalle.documentos.length === 0 && <p style={{ color: '#9ca3af' }}>Sin documentos todavía.</p>}
