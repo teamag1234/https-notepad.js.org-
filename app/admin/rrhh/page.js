@@ -194,6 +194,17 @@ function RRHH() {
             {/* DOCUMENTOS Y NÓMINAS */}
             <div style={{ flex: '1 1 380px', backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
               <h3 style={{ marginTop: 0 }}>📄 Documentos y nóminas</h3>
+              {datos.emailDocumentos?.remitente && (
+                datos.emailDocumentos.confidencial ? (
+                  <p style={{ fontSize: '12px', color: '#059669', backgroundColor: '#ecfdf5', borderRadius: '6px', padding: '6px 10px', margin: '0 0 12px' }}>
+                    🔒 Los avisos salen desde el email confidencial de RRHH: <strong>{datos.emailDocumentos.remitente}</strong>
+                  </p>
+                ) : (
+                  <p style={{ fontSize: '12px', color: '#92400e', backgroundColor: '#fef3c7', borderRadius: '6px', padding: '6px 10px', margin: '0 0 12px' }}>
+                    ⚠️ Los avisos salen desde el email general del equipo (<strong>{datos.emailDocumentos.remitente}</strong>). Para confidencialidad, configura RRHH_EMAIL_USER y RRHH_EMAIL_PASSWORD en Vercel.
+                  </p>
+                )
+              )}
               <form onSubmit={subirDocumento} style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '14px', backgroundColor: '#f9fafb', padding: '12px', borderRadius: '8px' }}>
                 <div style={campo('0 1 110px')}><label style={label}>Tipo</label>
                   <select value={doc.tipo} onChange={(e) => setDoc({ ...doc, tipo: e.target.value })} style={inputStyle}>

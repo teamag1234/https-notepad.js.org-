@@ -4,6 +4,7 @@ import { dbConfigurada } from '../../../../lib/admin/db.js';
 import {
   listarTrabajadores, crearTrabajador, actualizarTrabajador, detalleTrabajador,
   crearDocumento, borrarDocumento, crearVacaciones, cambiarEstadoVacaciones, borrarVacaciones,
+  emailRrhhInfo,
 } from '../../../../lib/admin/rrhh.js';
 import { diagnosticoAgapp } from '../../../../lib/admin/agapp.js';
 
@@ -26,6 +27,7 @@ export async function GET(request) {
       data: {
         trabajadores,
         blobConfigurado: !!(process.env.BLOB_STORE_ID || process.env.BLOB_READ_WRITE_TOKEN),
+        emailDocumentos: emailRrhhInfo(),
         fichajeIntegrado: diagAgapp.definida && diagAgapp.ok === true,
         diagAgapp,
       },
