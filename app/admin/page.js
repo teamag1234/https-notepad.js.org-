@@ -178,6 +178,26 @@ function Dashboard() {
         <AnillaMargen margen={m.margen} />
       </div>
 
+      {/* Aviso si alguna fuente de datos se queda parada */}
+      {(() => {
+        const s = datos.salud;
+        if (!s) return null;
+        const horas = (v) => (v ? (Date.now() - new Date(v).getTime()) / 3600000 : Infinity);
+        const avisos = [];
+        if (Number(s.banco_cuentas) > 0 && horas(s.banco_sync) > 36) {
+          avisos.push(<span key="b">🏦 El banco lleva {s.banco_sync ? `${Math.floor(horas(s.banco_sync) / 24)} día(s)` : 'un tiempo'} sin sincronizar — entra en <a href="/admin/banco" style={{ color: '#92400e' }}>Banco</a> y pulsa «Sincronizar ahora» para ver el error.</span>);
+        }
+        if (horas(s.kajabi_sync) > 36) {
+          avisos.push(<span key="k">💳 Los ingresos de Kajabi {s.kajabi_sync ? `llevan ${Math.floor(horas(s.kajabi_sync) / 24)} día(s) sin actualizarse` : 'aún no se han sincronizado desde el cron diario'} — se actualizan cada noche; el último ingreso registrado es del {s.kajabi_ultimo_ingreso ? new Date(s.kajabi_ultimo_ingreso).toLocaleDateString('es-ES') : '—'}.</span>);
+        }
+        if (!avisos.length) return null;
+        return (
+          <div style={{ backgroundColor: '#fef3c7', border: `1px solid ${AMBAR}33`, padding: '14px 18px', borderRadius: '10px', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '14px', color: '#92400e' }}>
+            {avisos}
+          </div>
+        );
+      })()}
+
       {/* Aviso de gastos sin clasificar */}
       {datos.sinClasificar.cantidad > 0 && (
         <a href="/admin/gastos?filtro=sin" style={{ textDecoration: 'none' }}>

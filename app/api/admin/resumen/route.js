@@ -2,15 +2,32 @@ import { NextResponse } from 'next/server';
 import { readFile } from 'fs/promises';
 import path from 'path';
 import { comprobarAdmin } from '../../../../lib/admin/auth.js';
-import { dbConfigurada, ensureSchema } from '../../../../lib/admin/db.js';
+import { dbConfigurada, ensureSchema, q } from '../../../../lib/admin/db.js';
 import { getResumenFinanzas, importarMovimientos } from '../../../../lib/admin/finanzas.js';
 import { getMorosos } from '../../../../lib/admin/airtable-live.js';
 
 export const dynamic = 'force-dynamic';
 
+// Salud de las fuentes de datos: cuándo se sincronizaron banco y Kajabi por
+// última vez, para avisar en el dashboard si alguna se queda parada.
+async function saludFuentes() {
+  try {
+    const filas = await q(`
+      SELECT
+        (SELECT MAX(ultima_sync) FROM banco_cuentas) AS banco_sync,
+        (SELECT COUNT(*)::int FROM banco_cuentas) AS banco_cuentas,
+        (SELECT actualizado_el FROM banco_config WHERE clave = 'kajabi_ingresos_sync') AS kajabi_sync,
+        (SELECT MAX(creado_el) FROM movimientos WHERE fuente = 'KAJABI') AS kajabi_ultimo_ingreso
+    `);
+    return filas[0] || null;
+  } catch {
+    return null;
+  }
+}
+
 async function cargarResumenCompleto(periodo) {
-  const [finanzas, morosos] = await Promise.all([getResumenFinanzas(periodo), getMorosos()]);
-  return { ...finanzas, morosos: morosos.morosos, totalMorosos: morosos.totalDeuda };
+  const [finanzas, morosos, salud] = await Promise.all([getResumenFinanzas(periodo), getMorosos(), saludFuentes()]);
+  return { ...finanzas, morosos: morosos.morosos, totalMorosos: morosos.totalDeuda, salud };
 }
 
 export async function GET(request) {
