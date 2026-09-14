@@ -14,9 +14,18 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url);
   if (searchParams.get('diag') === 'kajabi') {
     try {
-      const { diagnosticoKajabi } = await import('../../../lib/kajabi.js');
+      const { diagnosticoKajabi, listarSitios, getTransacciones } = await import('../../../lib/kajabi.js');
       const { syncKajabiToAirtable } = await import('../../../lib/sync-logic.js');
       respuesta.kajabiVars = diagnosticoKajabi();
+      respuesta.kajabiSitios = await listarSitios().catch((e) => `error: ${e.message}`);
+      if (searchParams.get('sinfecha') === '1') {
+        const todas = await getTransacciones({}).catch((e) => `error: ${e.message}`);
+        // Solo datos agregados: nada de nombres ni emails en un endpoint público
+        const resumen = (t) => (t ? { fecha: t.fecha, importe: t.importe, estado: t.estado, accion: t.accion } : null);
+        respuesta.kajabiSinFecha = Array.isArray(todas)
+          ? { total: todas.length, primera: resumen(todas[0]), ultima: resumen(todas[todas.length - 1]) }
+          : todas;
+      }
       respuesta.kajabiSync = await syncKajabiToAirtable();
     } catch (error) {
       respuesta.kajabiSync = { success: false, error: error.message };
