@@ -17,6 +17,7 @@ async function saludFuentes() {
         (SELECT MAX(ultima_sync) FROM banco_cuentas) AS banco_sync,
         (SELECT COUNT(*)::int FROM banco_cuentas) AS banco_cuentas,
         (SELECT actualizado_el FROM banco_config WHERE clave = 'kajabi_ingresos_sync') AS kajabi_sync,
+        (SELECT valor FROM banco_config WHERE clave = 'kajabi_ingresos_sync') AS kajabi_estado,
         (SELECT MAX(creado_el) FROM movimientos WHERE fuente = 'KAJABI') AS kajabi_ultimo_ingreso
     `);
     return filas[0] || null;

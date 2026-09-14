@@ -187,7 +187,9 @@ function Dashboard() {
         if (Number(s.banco_cuentas) > 0 && horas(s.banco_sync) > 36) {
           avisos.push(<span key="b">🏦 El banco lleva {s.banco_sync ? `${Math.floor(horas(s.banco_sync) / 24)} día(s)` : 'un tiempo'} sin sincronizar — entra en <a href="/admin/banco" style={{ color: '#92400e' }}>Banco</a> y pulsa «Sincronizar ahora» para ver el error.</span>);
         }
-        if (horas(s.kajabi_sync) > 36) {
+        if (String(s.kajabi_estado || '').startsWith('error')) {
+          avisos.push(<span key="k">💳 <strong>La sincronización de ingresos de Kajabi está fallando:</strong> {s.kajabi_estado.replace(/^error:\s*/, '')}</span>);
+        } else if (horas(s.kajabi_sync) > 36) {
           avisos.push(<span key="k">💳 Los ingresos de Kajabi {s.kajabi_sync ? `llevan ${Math.floor(horas(s.kajabi_sync) / 24)} día(s) sin actualizarse` : 'aún no se han sincronizado desde el cron diario'} — se actualizan cada noche; el último ingreso registrado es del {s.kajabi_ultimo_ingreso ? new Date(s.kajabi_ultimo_ingreso).toLocaleDateString('es-ES') : '—'}.</span>);
         }
         if (!avisos.length) return null;

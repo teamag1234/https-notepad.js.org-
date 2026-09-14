@@ -8,6 +8,22 @@ function Ingresos() {
   const [ingresos, setIngresos] = useState(null);
   const [mes, setMes] = useState('');
   const [error, setError] = useState('');
+  const [sincronizando, setSincronizando] = useState(false);
+  const [aviso, setAviso] = useState('');
+
+  const sincronizarKajabi = async () => {
+    setSincronizando(true);
+    setError('');
+    setAviso('');
+    try {
+      const r = await apiFetch('/api/admin/sync-kajabi-ingresos', { method: 'POST' });
+      setAviso(`✅ Sincronizado con Kajabi: ${r.transaccionesLeidas ?? 0} cobros leídos, ${r.nuevos ?? 0} ingresos nuevos registrados.`);
+      cargar();
+    } catch (e) {
+      setError(`No se pudo sincronizar con Kajabi: ${e.message}`);
+    }
+    setSincronizando(false);
+  };
 
   const cargar = useCallback(() => {
     const filtro = mes ? `&mes=${mes}` : '';
@@ -22,15 +38,19 @@ function Ingresos() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', alignItems: 'baseline' }}>
         <h2 style={{ marginTop: 0 }}>Ingresos</h2>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
           <input type="month" value={mes} onChange={(e) => setMes(e.target.value)} style={{ padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px' }} />
           {mes && <button onClick={() => setMes('')} style={{ border: 'none', background: 'none', color: '#2563eb', cursor: 'pointer' }}>quitar filtro</button>}
+          <button onClick={sincronizarKajabi} disabled={sincronizando} style={{ padding: '8px 14px', backgroundColor: '#111827', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
+            {sincronizando ? 'Sincronizando…' : '🔄 Sincronizar Kajabi ahora'}
+          </button>
         </div>
       </div>
       <p style={{ color: '#6b7280' }}>
-        Los ingresos entran automáticamente desde Kajabi (webhook + histórico importado).{' '}
+        Los cobros de Kajabi se sincronizan solos cada noche desde la API de Kajabi; el botón fuerza la sincronización ahora mismo.{' '}
         {ingresos && <strong>Mostrando {ingresos.length} cobros · {eur(total)}</strong>}
       </p>
+      {aviso && <p style={{ backgroundColor: '#dcfce7', padding: '10px', borderRadius: '6px' }}>{aviso}</p>}
       {error && <p style={{ backgroundColor: '#fee2e2', padding: '10px', borderRadius: '6px' }}>{error}</p>}
 
       <div style={{ backgroundColor: 'white', borderRadius: '10px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
