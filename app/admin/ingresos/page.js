@@ -17,7 +17,7 @@ function Ingresos() {
     setAviso('');
     try {
       const r = await apiFetch('/api/admin/sync-kajabi-ingresos', { method: 'POST' });
-      setAviso(`✅ Sincronizado con Kajabi: ${r.transaccionesLeidas ?? 0} cobros leídos, ${r.nuevos ?? 0} ingresos nuevos registrados.`);
+      setAviso(`✅ Sincronizado con Kajabi: ${r.transaccionesLeidas ?? 0} cobros leídos · ${r.nuevos ?? 0} ingresos nuevos · ${r.pagosAnotados ?? 0} pagos anotados en Airtable (${r.fichasCreadas ?? 0} fichas nuevas${r.plazosProgramados ? `, ${r.plazosProgramados} cuotas programadas` : ''}).`);
       cargar();
     } catch (e) {
       setError(`No se pudo sincronizar con Kajabi: ${e.message}`);
