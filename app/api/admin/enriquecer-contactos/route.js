@@ -14,6 +14,12 @@ const KAJABI_API = 'https://api.kajabi.com';
 const SITE_ID = '167072'; // AG ACADEMY
 
 const normalizar = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+// Mismo nombre aunque cambie el orden de las palabras ("García Ana" = "Ana García")
+const mismoNombre = (a, b) => {
+  const ta = normalizar(a).split(' ').sort().join(' ');
+  const tb = normalizar(b).split(' ').sort().join(' ');
+  return ta && ta === tb;
+};
 
 async function tokenKajabi() {
   const { data } = await axios.post(`${KAJABI_API}/v1/oauth/token`, new URLSearchParams({
@@ -73,8 +79,11 @@ export async function POST(request) {
             if (tel) { campos['Teléfono'] = String(tel); resumen.telefonos += 1; }
             else resumen.sinCoincidencia += 1;
           } else if (!email && nombre) {
-            const contactos = await buscarContactos(token, 'name_contains', nombre);
-            const exactos = contactos.filter((x) => normalizar(x.name) === normalizar(nombre));
+            // Se busca por la palabra más larga del nombre (el orden del resto
+            // puede variar entre Airtable y Kajabi) y se exige nombre completo igual
+            const clave = normalizar(nombre).split(' ').sort((a, b) => b.length - a.length)[0] || nombre;
+            const contactos = await buscarContactos(token, 'name_contains', clave);
+            const exactos = contactos.filter((x) => mismoNombre(x.name, nombre));
             if (exactos.length === 1) {
               const c = exactos[0];
               if (c.email) { campos['Email'] = c.email; resumen.emails += 1; }
