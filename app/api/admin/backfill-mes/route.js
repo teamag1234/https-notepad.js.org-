@@ -10,13 +10,10 @@ export const maxDuration = 300;
 // Vuelca en Airtable todos los cobros de Kajabi de un mes (?mes=2026-09):
 // crea las fichas que falten y anota los pagos en la columna del mes, sin
 // tocar los importes ya anotados a mano (esos vuelven en "saltados").
-// Clave puntual además del admin para la pasada inicial de septiembre.
-const CLAVE_PUNTUAL = 'bf-sept-3e91c47a2d5f88b1';
-
 export async function POST(request) {
   const body = await request.json().catch(() => ({}));
   const auth = comprobarAdmin(request);
-  if (!auth.ok && body.clave !== CLAVE_PUNTUAL) {
+  if (!auth.ok) {
     return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
   }
   const mes = String(body.mes || '').match(/^\d{4}-\d{2}$/) ? body.mes : null;
