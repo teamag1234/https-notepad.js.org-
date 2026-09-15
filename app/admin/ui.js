@@ -128,6 +128,7 @@ export function Shell({ activo, children }) {
     { id: 'morosos', href: '/admin/morosos', texto: '⚠️ Morosos' },
     { id: 'pagos', href: '/admin/pagos', texto: '💳 Recordatorios' },
     { id: 'roas', href: '/admin/roas', texto: '📈 ROAS' },
+    { id: 'facturas', href: '/admin/facturas', texto: '🧾 Facturas' },
     { id: 'banco', href: '/admin/banco', texto: '🏦 Banco' },
     { id: 'rrhh', href: '/admin/rrhh', texto: '👥 RRHH' },
   ];
