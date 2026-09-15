@@ -64,6 +64,17 @@ export async function PATCH(request) {
   }
   try {
     const body = await request.json();
+    // Adjuntar o quitar el documento (factura de compra) de un movimiento
+    if (body.id && body.adjunto !== undefined) {
+      const { q } = await import('../../../../lib/admin/db.js');
+      if (body.adjunto === null) {
+        await q(`UPDATE movimientos SET doc_url = NULL, doc_nombre = NULL, doc_subido_el = NULL WHERE id = $1`, [Number(body.id)]);
+      } else {
+        await q(`UPDATE movimientos SET doc_url = $2, doc_nombre = $3, doc_subido_el = now() WHERE id = $1`,
+          [Number(body.id), body.adjunto.url, body.adjunto.nombre || null]);
+      }
+      return NextResponse.json({ success: true });
+    }
     if (!body.id || !body.categoria) {
       return NextResponse.json({ success: false, error: 'Faltan id o categoria' }, { status: 400 });
     }
