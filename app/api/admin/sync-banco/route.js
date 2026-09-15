@@ -10,9 +10,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request) {
   const esCron = request.headers.get('authorization') === `Bearer ${process.env.CRON_SECRET}`;
   const auth = comprobarAdmin(request);
-  // Clave puntual temporal para la extracción del histórico de 2026
-  const clavePuntual = new URL(request.url).searchParams.get('clave') === 'sb-hist-41c9d2e8f7b3a065';
-  if (!esCron && !auth.ok && !clavePuntual) {
+  if (!esCron && !auth.ok) {
     return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
   }
   if (!dbConfigurada() || !bancoConfigurado()) {
