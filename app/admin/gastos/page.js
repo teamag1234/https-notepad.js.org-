@@ -162,6 +162,20 @@ function Gastos() {
           <button onClick={enviarAsesoria} disabled={guardando} style={{ padding: '8px 14px', backgroundColor: '#2456A6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>
             {guardando ? 'Preparando…' : '📤 Enviar mes a la asesoría'}
           </button>
+          <button onClick={async () => {
+            try {
+              const key = localStorage.getItem('agAdminKey');
+              const anio = mesAsesoria.slice(0, 4);
+              const r = await fetch(`/api/admin/exportar?anio=${anio}`, { headers: { 'x-admin-key': key || '' } });
+              if (!r.ok) throw new Error('No se pudo generar el Excel');
+              const a = document.createElement('a');
+              a.href = URL.createObjectURL(await r.blob());
+              a.download = `banco-AG-${anio}.xlsx`;
+              a.click();
+            } catch (e2) { setError(e2.message); }
+          }} style={{ padding: '8px 14px', border: '1px solid #d1d5db', background: 'white', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
+            ⬇️ Excel del año (banco)
+          </button>
         </div>
       </div>
       <p style={{ color: '#6b7280', fontSize: '13px', margin: '6px 0 12px' }}>
