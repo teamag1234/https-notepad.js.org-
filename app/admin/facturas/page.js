@@ -7,7 +7,7 @@ const inputStyle = { padding: '9px', border: '1px solid #d1d5db', borderRadius: 
 const label = { fontSize: '12px', color: '#6b7280' };
 const campo = (flex = '1 1 160px') => ({ display: 'flex', flexDirection: 'column', gap: '4px', flex });
 
-const FORM_VACIO = { fecha: new Date().toISOString().slice(0, 10), alumno: '', dni: '', direccion: '', email: '', concepto: '', cantidad: 1, importe: '', referencia: null };
+const FORM_VACIO = { fecha: new Date().toISOString().slice(0, 10), alumno: '', dni: '', direccion: '', email: '', concepto: '', cantidad: 1, importe: '', referencia: null, pagada: true };
 
 function Facturas() {
   const { apiFetch, clave } = useAdmin();
@@ -126,6 +126,13 @@ function Facturas() {
             <div style={campo('2 1 280px')}><label style={label}>Concepto *</label><input value={form.concepto} onChange={(e) => setForm({ ...form, concepto: e.target.value })} style={inputStyle} /></div>
             <div style={campo('0 1 90px')}><label style={label}>Cantidad</label><input type="number" min="1" value={form.cantidad} onChange={(e) => setForm({ ...form, cantidad: Number(e.target.value) })} style={inputStyle} /></div>
             <div style={campo('0 1 130px')}><label style={label}>Importe total (€) *</label><input type="number" step="0.01" value={form.importe} onChange={(e) => setForm({ ...form, importe: e.target.value })} style={inputStyle} /></div>
+            <div style={campo('0 1 170px')}>
+              <label style={label}>Estado del pago</label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '9px 0', fontSize: '14px', cursor: 'pointer' }}>
+                <input type="checkbox" checked={form.pagada} onChange={(e) => setForm({ ...form, pagada: e.target.checked })} />
+                <span style={{ color: form.pagada ? '#059669' : '#d97706', fontWeight: 'bold' }}>{form.pagada ? '✔ Pagada (sello PAGADA, sin IBAN)' : 'Pendiente (mostrará el IBAN)'}</span>
+              </label>
+            </div>
           </div>
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
             <button onClick={() => guardar(true)} disabled={trabajando || !form.email} title={!form.email ? 'Sin email no se puede enviar' : ''}
@@ -182,7 +189,9 @@ function Facturas() {
                   <td style={{ padding: '8px 6px', fontWeight: 'bold', whiteSpace: 'nowrap' }}>{f.numero}</td>
                   <td style={{ padding: '8px 6px', whiteSpace: 'nowrap' }}>{f.fecha}</td>
                   <td style={{ padding: '8px 6px' }}>{f.alumno}<div style={{ fontSize: '11px', color: '#9ca3af' }}>{f.email}</div></td>
-                  <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: 'bold', whiteSpace: 'nowrap' }}>{eur(f.importe)}</td>
+                  <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: 'bold', whiteSpace: 'nowrap' }}>{eur(f.importe)}
+                    <div style={{ fontSize: '10px', fontWeight: 'bold', color: f.pagada ? '#059669' : '#d97706' }}>{f.pagada ? 'PAGADA' : 'PTE. PAGO'}</div>
+                  </td>
                   <td style={{ padding: '8px 6px', whiteSpace: 'nowrap' }}>
                     {f.estado === 'ENVIADA'
                       ? <span style={{ fontSize: '12px', color: '#059669', fontWeight: 'bold' }}>📤 enviada {f.enviada}</span>
