@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { comprobarAdmin } from '../../../../lib/admin/auth.js';
+import { comprobarFacturas } from '../../../../lib/admin/auth.js';
 import { dbConfigurada } from '../../../../lib/admin/db.js';
 import {
   listarFacturas, cobrosSinFactura, crearFactura, actualizarFactura, borrarFactura,
@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 export async function GET(request) {
-  const auth = comprobarAdmin(request);
+  const auth = comprobarFacturas(request);
   if (!auth.ok) return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
   if (!dbConfigurada()) return NextResponse.json({ success: false, error: 'Falta la base de datos (DATABASE_URL)' }, { status: 500 });
   try {
@@ -43,7 +43,7 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  const auth = comprobarAdmin(request);
+  const auth = comprobarFacturas(request);
   if (!auth.ok) return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
   try {
     const body = await request.json();

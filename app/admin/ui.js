@@ -7,21 +7,27 @@ export const eur = (n) =>
 
 export function useAdmin() {
   const [clave, setClave] = useState(null);
+  const [rol, setRol] = useState('admin');
   const [listo, setListo] = useState(false);
 
   useEffect(() => {
     setClave(localStorage.getItem('agAdminKey'));
+    setRol(localStorage.getItem('agAdminRol') || 'admin');
     setListo(true);
   }, []);
 
-  const entrar = useCallback((nueva) => {
+  const entrar = useCallback((nueva, nuevoRol = 'admin') => {
     localStorage.setItem('agAdminKey', nueva);
+    localStorage.setItem('agAdminRol', nuevoRol);
     setClave(nueva);
+    setRol(nuevoRol);
   }, []);
 
   const salir = useCallback(() => {
     localStorage.removeItem('agAdminKey');
+    localStorage.removeItem('agAdminRol');
     setClave(null);
+    setRol('admin');
   }, []);
 
   const apiFetch = useCallback(async (url, options = {}) => {
@@ -39,7 +45,7 @@ export function useAdmin() {
     return data.data ?? data;
   }, []);
 
-  return { clave, listo, entrar, salir, apiFetch };
+  return { clave, rol, listo, entrar, salir, apiFetch };
 }
 
 const estilos = {
@@ -91,12 +97,15 @@ export function Shell({ activo, children }) {
           onSubmit={async (e) => {
             e.preventDefault();
             setError('');
-            const response = await fetch('/api/admin/morosos', { headers: { 'x-admin-key': input } });
+            const response = await fetch('/api/admin/quien', { headers: { 'x-admin-key': input } });
             if (response.status === 401) {
               setError('Clave incorrecta');
               return;
             }
-            admin.entrar(input);
+            const j = await response.json().catch(() => ({}));
+            const rol = j?.data?.rol || 'admin';
+            admin.entrar(input, rol);
+            if (rol === 'facturas') window.location.href = '/admin/facturas';
           }}
           style={{ backgroundColor: 'white', padding: '32px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', width: '340px' }}
         >
@@ -121,17 +130,26 @@ export function Shell({ activo, children }) {
     );
   }
 
-  const secciones = [
-    { id: 'dashboard', href: '/admin', texto: '📊 Dashboard' },
-    { id: 'gastos', href: '/admin/gastos', texto: '💸 Gastos' },
-    { id: 'ingresos', href: '/admin/ingresos', texto: '💰 Ingresos' },
-    { id: 'morosos', href: '/admin/morosos', texto: '⚠️ Morosos' },
-    { id: 'pagos', href: '/admin/pagos', texto: '💳 Recordatorios' },
-    { id: 'roas', href: '/admin/roas', texto: '📈 ROAS' },
-    { id: 'facturas', href: '/admin/facturas', texto: '🧾 Facturas' },
-    { id: 'banco', href: '/admin/banco', texto: '🏦 Banco' },
-    { id: 'rrhh', href: '/admin/rrhh', texto: '👥 RRHH' },
-  ];
+  const soloFacturas = admin.rol === 'facturas';
+  const secciones = soloFacturas
+    ? [{ id: 'facturas', href: '/admin/facturas', texto: '🧾 Facturas' }]
+    : [
+      { id: 'dashboard', href: '/admin', texto: '📊 Dashboard' },
+      { id: 'gastos', href: '/admin/gastos', texto: '💸 Gastos' },
+      { id: 'ingresos', href: '/admin/ingresos', texto: '💰 Ingresos' },
+      { id: 'morosos', href: '/admin/morosos', texto: '⚠️ Morosos' },
+      { id: 'pagos', href: '/admin/pagos', texto: '💳 Recordatorios' },
+      { id: 'roas', href: '/admin/roas', texto: '📈 ROAS' },
+      { id: 'facturas', href: '/admin/facturas', texto: '🧾 Facturas' },
+      { id: 'banco', href: '/admin/banco', texto: '🏦 Banco' },
+      { id: 'rrhh', href: '/admin/rrhh', texto: '👥 RRHH' },
+    ];
+
+  // Con clave de facturación, cualquier otra página redirige a Facturas
+  if (soloFacturas && activo !== 'facturas') {
+    if (typeof window !== 'undefined') window.location.href = '/admin/facturas';
+    return null;
+  }
 
   return (
     <div style={estilos.fondo}>
