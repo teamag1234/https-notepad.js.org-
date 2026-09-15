@@ -130,9 +130,13 @@ export function Shell({ activo, children }) {
     );
   }
 
+  // La clave del equipo (rol facturación) solo abre Facturas y Bajas
   const soloFacturas = admin.rol === 'facturas';
   const secciones = soloFacturas
-    ? [{ id: 'facturas', href: '/admin/facturas', texto: '🧾 Facturas' }]
+    ? [
+      { id: 'facturas', href: '/admin/facturas', texto: '🧾 Facturas' },
+      { id: 'bajas', href: '/admin/bajas', texto: '🚪 Bajas' },
+    ]
     : [
       { id: 'dashboard', href: '/admin', texto: '📊 Dashboard' },
       { id: 'gastos', href: '/admin/gastos', texto: '💸 Gastos' },
@@ -141,12 +145,12 @@ export function Shell({ activo, children }) {
       { id: 'pagos', href: '/admin/pagos', texto: '💳 Recordatorios' },
       { id: 'roas', href: '/admin/roas', texto: '📈 ROAS' },
       { id: 'facturas', href: '/admin/facturas', texto: '🧾 Facturas' },
+      { id: 'bajas', href: '/admin/bajas', texto: '🚪 Bajas' },
       { id: 'banco', href: '/admin/banco', texto: '🏦 Banco' },
       { id: 'rrhh', href: '/admin/rrhh', texto: '👥 RRHH' },
     ];
 
-  // Con clave de facturación, cualquier otra página redirige a Facturas
-  if (soloFacturas && activo !== 'facturas') {
+  if (soloFacturas && activo !== 'facturas' && activo !== 'bajas') {
     if (typeof window !== 'undefined') window.location.href = '/admin/facturas';
     return null;
   }
