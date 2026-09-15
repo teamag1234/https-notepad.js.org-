@@ -5,6 +5,7 @@ const nextConfig = {
   serverExternalPackages: ['pdfkit'],
   outputFileTracingIncludes: {
     '/api/admin/facturas': ['./node_modules/pdfkit/js/**'],
+    '/api/admin/facturas/route': ['./node_modules/pdfkit/js/**'],
   },
   env: {
     KAJABI_API_KEY: process.env.KAJABI_API_KEY,
