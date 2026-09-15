@@ -1,5 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // pdfkit carga sus fuentes estándar en tiempo de ejecución: se deja sin
+  // empaquetar y se fuerzan sus archivos en la función de facturas.
+  serverExternalPackages: ['pdfkit'],
+  outputFileTracingIncludes: {
+    '/api/admin/facturas': ['./node_modules/pdfkit/js/**'],
+  },
   env: {
     KAJABI_API_KEY: process.env.KAJABI_API_KEY,
     AIRTABLE_TOKEN: process.env.AIRTABLE_TOKEN,
