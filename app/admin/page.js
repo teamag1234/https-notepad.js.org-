@@ -199,6 +199,13 @@ function Dashboard() {
             <div style={{ fontSize: '12px', opacity: 0.7 }}>Neto en caja</div>
             <div style={{ fontSize: '22px', fontWeight: 'bold', color: datos.banco.neto >= 0 ? '#6ee7b7' : '#fca5a5' }}>{eur(datos.banco.neto)}</div>
           </div>
+          <div style={{ flex: '1 1 120px' }}>
+            <div style={{ fontSize: '12px', opacity: 0.7 }}>Margen real</div>
+            <div style={{ fontSize: '22px', fontWeight: 'bold', color: (datos.banco.margen ?? 0) >= 0 ? '#6ee7b7' : '#fca5a5' }}>
+              {datos.banco.margen != null ? `${datos.banco.margen}%` : '—'}
+            </div>
+            <div style={{ fontSize: '11px', opacity: 0.55 }}>del dinero entrado</div>
+          </div>
         </div>
       )}
 
