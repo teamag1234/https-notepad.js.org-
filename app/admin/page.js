@@ -178,6 +178,30 @@ function Dashboard() {
         <AnillaMargen margen={m.margen} />
       </div>
 
+      {/* Real bancario del periodo */}
+      {datos.banco && (
+        <div style={{ backgroundColor: '#0f172a', color: 'white', borderRadius: '12px', padding: '16px 20px', marginBottom: '20px', display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center' }}>
+          <div style={{ flex: '1 1 170px' }}>
+            <div style={{ fontSize: '13px', opacity: 0.75 }}>🏦 REAL BANCARIO</div>
+            <div style={{ fontSize: '11px', opacity: 0.55, lineHeight: 1.4 }}>Lo que de verdad entra y sale del banco — la facturación de Kajabi llega en traspasos días después</div>
+          </div>
+          <div style={{ flex: '1 1 140px' }}>
+            <div style={{ fontSize: '12px', opacity: 0.7 }}>Entradas en el banco</div>
+            <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#6ee7b7' }}>{eur(datos.banco.entradas)}</div>
+            {datos.banco.deltaEntradas != null && <div style={{ fontSize: '11px', opacity: 0.6 }}>{datos.banco.deltaEntradas >= 0 ? '▲' : '▼'} {Math.abs(datos.banco.deltaEntradas)}% {etiquetaDelta}</div>}
+          </div>
+          <div style={{ flex: '1 1 140px' }}>
+            <div style={{ fontSize: '12px', opacity: 0.7 }}>Salidas del banco</div>
+            <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#fca5a5' }}>{eur(datos.banco.salidas)}</div>
+            {datos.banco.deltaSalidas != null && <div style={{ fontSize: '11px', opacity: 0.6 }}>{datos.banco.deltaSalidas >= 0 ? '▲' : '▼'} {Math.abs(datos.banco.deltaSalidas)}% {etiquetaDelta}</div>}
+          </div>
+          <div style={{ flex: '1 1 140px' }}>
+            <div style={{ fontSize: '12px', opacity: 0.7 }}>Neto en caja</div>
+            <div style={{ fontSize: '22px', fontWeight: 'bold', color: datos.banco.neto >= 0 ? '#6ee7b7' : '#fca5a5' }}>{eur(datos.banco.neto)}</div>
+          </div>
+        </div>
+      )}
+
       {/* Aviso si alguna fuente de datos se queda parada */}
       {(() => {
         const s = datos.salud;
