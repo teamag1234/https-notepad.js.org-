@@ -15,6 +15,7 @@ function Facturas() {
   const [error, setError] = useState('');
   const [aviso, setAviso] = useState('');
   const [form, setForm] = useState(null); // null = formulario cerrado
+  const [busqueda, setBusqueda] = useState('');
   const [buscandoContacto, setBuscandoContacto] = useState(false);
   const [trabajando, setTrabajando] = useState(false);
 
@@ -84,11 +85,23 @@ function Facturas() {
   if (error && !datos) return <p style={{ backgroundColor: '#fee2e2', padding: '12px', borderRadius: '6px' }}>{error}</p>;
   if (!datos) return <p>Cargando…</p>;
 
+  // Buscador: filtra por nombre, email, concepto o número de factura
+  const normaliza = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const q = normaliza(busqueda.trim());
+  const coincide = (...campos) => !q || campos.some((c) => normaliza(c).includes(q));
+  const cobrosVisibles = datos.cobros.filter((c) => coincide(c.contacto, c.email, c.concepto));
+  const facturasVisibles = datos.facturas.filter((f) => coincide(f.alumno, f.email, f.concepto, f.numero, f.dni));
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', alignItems: 'baseline' }}>
         <h2 style={{ marginTop: 0 }}>🧾 Facturas</h2>
-        <button onClick={() => { setForm({ ...FORM_VACIO }); setAviso(''); }} style={{ padding: '8px 14px', backgroundColor: '#111827', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>+ Factura manual</button>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="🔍 Buscar alumno, email, curso…"
+                 style={{ padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '14px', width: '240px' }} />
+          {busqueda && <button onClick={() => setBusqueda('')} style={{ border: 'none', background: 'none', color: '#2563eb', cursor: 'pointer' }}>limpiar</button>}
+          <button onClick={() => { setForm({ ...FORM_VACIO }); setAviso(''); }} style={{ padding: '8px 14px', backgroundColor: '#111827', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>+ Factura manual</button>
+        </div>
       </div>
       <p style={{ color: '#6b7280', fontSize: '14px' }}>
         Elige un cobro, revisa los datos (se autocompletan desde Kajabi) y pulsa enviar: el alumno recibe el PDF con el diseño de AG Academy.
@@ -127,12 +140,13 @@ function Facturas() {
 
       {/* COBROS SIN FACTURA */}
       <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', marginBottom: '20px' }}>
-        <h3 style={{ marginTop: 0 }}>💰 Cobros sin factura <span style={{ color: '#9ca3af', fontSize: '13px' }}>(últimos 90 días · {datos.cobros.length})</span></h3>
+        <h3 style={{ marginTop: 0 }}>💰 Cobros sin factura <span style={{ color: '#9ca3af', fontSize: '13px' }}>(últimos 90 días · {cobrosVisibles.length}{q ? ` de ${datos.cobros.length}` : ''})</span></h3>
         {datos.cobros.length === 0 && <p style={{ color: '#9ca3af' }}>Todos los cobros recientes tienen factura.</p>}
+        {datos.cobros.length > 0 && cobrosVisibles.length === 0 && <p style={{ color: '#9ca3af' }}>Ningún cobro coincide con «{busqueda}».</p>}
         <div style={{ overflowX: 'auto', maxHeight: '340px', overflowY: 'auto' }}>
           <table style={{ width: '100%', fontSize: '14px', borderCollapse: 'collapse' }}>
             <tbody>
-              {datos.cobros.map((c) => (
+              {cobrosVisibles.map((c) => (
                 <tr key={c.id} style={{ borderTop: '1px solid #f3f4f6' }}>
                   <td style={{ padding: '7px 6px', whiteSpace: 'nowrap' }}>{c.fecha}</td>
                   <td style={{ padding: '7px 6px' }}>{c.contacto || <span style={{ color: '#9ca3af' }}>sin nombre</span>}</td>
@@ -150,8 +164,9 @@ function Facturas() {
 
       {/* FACTURAS EMITIDAS */}
       <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-        <h3 style={{ marginTop: 0 }}>📚 Facturas emitidas <span style={{ color: '#9ca3af', fontSize: '13px' }}>({datos.facturas.length})</span></h3>
+        <h3 style={{ marginTop: 0 }}>📚 Facturas emitidas <span style={{ color: '#9ca3af', fontSize: '13px' }}>({facturasVisibles.length}{q ? ` de ${datos.facturas.length}` : ''})</span></h3>
         {datos.facturas.length === 0 && <p style={{ color: '#9ca3af' }}>Todavía no hay facturas. Genera la primera desde un cobro de arriba.</p>}
+        {datos.facturas.length > 0 && facturasVisibles.length === 0 && <p style={{ color: '#9ca3af' }}>Ninguna factura coincide con «{busqueda}».</p>}
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', fontSize: '14px', borderCollapse: 'collapse' }}>
             <thead>
@@ -162,7 +177,7 @@ function Facturas() {
               </tr>
             </thead>
             <tbody>
-              {datos.facturas.map((f) => (
+              {facturasVisibles.map((f) => (
                 <tr key={f.id} style={{ borderTop: '1px solid #f3f4f6' }}>
                   <td style={{ padding: '8px 6px', fontWeight: 'bold', whiteSpace: 'nowrap' }}>{f.numero}</td>
                   <td style={{ padding: '8px 6px', whiteSpace: 'nowrap' }}>{f.fecha}</td>
