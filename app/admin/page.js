@@ -81,14 +81,16 @@ function Dashboard() {
 
   useEffect(() => { if (clave) cargar(); }, [clave, cargar]);
 
-  const mesHoy = () => {
+  const hoyISO = () => new Date().toISOString().slice(0, 10);
+  const primerDia = (nMesesAtras) => {
     const ahora = new Date();
-    return `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}`;
+    const f = new Date(Date.UTC(ahora.getFullYear(), ahora.getMonth() - nMesesAtras, 1));
+    return f.toISOString().slice(0, 10);
   };
-  const restarMeses = (n) => {
+  const ultimoDia = (nMesesAtras) => {
     const ahora = new Date();
-    const f = new Date(ahora.getFullYear(), ahora.getMonth() - n, 1);
-    return `${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, '0')}`;
+    const f = new Date(Date.UTC(ahora.getFullYear(), ahora.getMonth() - nMesesAtras + 1, 0));
+    return f.toISOString().slice(0, 10);
   };
 
   const inicializar = async () => {
@@ -129,17 +131,23 @@ function Dashboard() {
   const maximo = Math.max(...datos.porMes.map((x) => Math.max(x.ingresos, x.gastos)), 1);
   const gastosCategorias = datos.categoriasMes.filter((c) => c.tipo === 'GASTO').sort((a, b) => b.total - a.total);
   const totalGastosMes = gastosCategorias.reduce((s, c) => s + c.total, 0) || 1;
-  const nombrePeriodo = p.duracion === 1
-    ? `${MESES_LARGO[p.desde.slice(5)]} ${p.desde.slice(0, 4)}`
-    : `${MESES_LARGO[p.desde.slice(5)]} ${p.desde.slice(0, 4)} — ${MESES_LARGO[p.hasta.slice(5)]} ${p.hasta.slice(0, 4)}`;
-  const etiquetaDelta = p.duracion === 1 ? 'vs mes anterior' : `vs ${p.duracion} meses anteriores`;
+  const fmtDia = (x) => x ? new Date(`${x}T12:00:00Z`).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+  const nombrePeriodo = p.mesExacto === false
+    ? (p.desdeDia === p.hastaDia ? fmtDia(p.desdeDia) : `${fmtDia(p.desdeDia)} — ${fmtDia(p.hastaDia)}`)
+    : p.duracion === 1
+      ? `${MESES_LARGO[p.desde.slice(5)]} ${p.desde.slice(0, 4)}`
+      : `${MESES_LARGO[p.desde.slice(5)]} ${p.desde.slice(0, 4)} — ${MESES_LARGO[p.hasta.slice(5)]} ${p.hasta.slice(0, 4)}`;
+  const etiquetaDelta = p.mesExacto === false
+    ? (p.dias === 1 ? 'vs día anterior' : `vs ${p.dias} días anteriores`)
+    : p.duracion === 1 ? 'vs mes anterior' : `vs ${p.duracion} meses anteriores`;
   const chipPeriodo = (activo) => ({
     padding: '7px 14px', borderRadius: '999px', border: '1px solid #d1d5db', cursor: 'pointer', fontSize: '13px',
     backgroundColor: activo ? '#111827' : 'white', color: activo ? 'white' : '#374151', fontWeight: activo ? 'bold' : 'normal',
   });
   const esEsteMes = !periodo.desde;
-  const esMesPasado = periodo.desde === restarMeses(1) && (periodo.hasta || periodo.desde) === restarMeses(1);
-  const esTresMeses = periodo.desde === restarMeses(2) && (periodo.hasta || periodo.desde) === mesHoy();
+  const esHoy = periodo.desde === hoyISO() && (periodo.hasta || periodo.desde) === hoyISO();
+  const esMesPasado = periodo.desde === primerDia(1) && periodo.hasta === ultimoDia(1);
+  const esTresMeses = periodo.desde === primerDia(2) && periodo.hasta === hoyISO();
 
   return (
     <div>
@@ -154,17 +162,18 @@ function Dashboard() {
       {/* Selector de periodo */}
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '16px' }}>
         <button style={chipPeriodo(esEsteMes)} onClick={() => setPeriodo({ desde: '', hasta: '' })}>Este mes</button>
-        <button style={chipPeriodo(esMesPasado)} onClick={() => setPeriodo({ desde: restarMeses(1), hasta: restarMeses(1) })}>Mes pasado</button>
-        <button style={chipPeriodo(esTresMeses)} onClick={() => setPeriodo({ desde: restarMeses(2), hasta: mesHoy() })}>Últimos 3 meses</button>
-        <span style={{ fontSize: '13px', color: '#6b7280', marginLeft: '8px' }}>Personalizado:</span>
+        <button style={chipPeriodo(esHoy)} onClick={() => setPeriodo({ desde: hoyISO(), hasta: hoyISO() })}>Hoy</button>
+        <button style={chipPeriodo(esMesPasado)} onClick={() => setPeriodo({ desde: primerDia(1), hasta: ultimoDia(1) })}>Mes pasado</button>
+        <button style={chipPeriodo(esTresMeses)} onClick={() => setPeriodo({ desde: primerDia(2), hasta: hoyISO() })}>Últimos 3 meses</button>
+        <span style={{ fontSize: '13px', color: '#6b7280', marginLeft: '8px' }}>Personalizado (día a día):</span>
         <input
-          type="month" value={periodo.desde} max={mesHoy()}
+          type="date" value={periodo.desde} max={hoyISO()}
           onChange={(e) => setPeriodo((prev) => ({ desde: e.target.value, hasta: prev.hasta || e.target.value }))}
           style={{ padding: '6px 8px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px' }}
         />
         <span style={{ color: '#9ca3af' }}>→</span>
         <input
-          type="month" value={periodo.hasta} min={periodo.desde || undefined} max={mesHoy()}
+          type="date" value={periodo.hasta} min={periodo.desde || undefined} max={hoyISO()}
           onChange={(e) => setPeriodo((prev) => ({ desde: prev.desde || e.target.value, hasta: e.target.value }))}
           style={{ padding: '6px 8px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px' }}
         />
@@ -260,7 +269,13 @@ function Dashboard() {
             const dentro = x.mes >= p.desde && x.mes <= p.hasta;
             return (
               <div key={x.mes} title={`${etiquetaMes(x.mes)} · Ingresos ${eur(x.ingresos)} · Gastos ${eur(x.gastos)} · Beneficio ${eur(beneficioMes)}`}
-                   onClick={() => setPeriodo({ desde: x.mes, hasta: x.mes })}
+                   onClick={() => {
+                     const [a, mm] = x.mes.split('-').map(Number);
+                     setPeriodo({
+                       desde: `${x.mes}-01`,
+                       hasta: new Date(Date.UTC(a, mm, 0)).toISOString().slice(0, 10),
+                     });
+                   }}
                    style={{ flex: '1 0 56px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', cursor: 'pointer', opacity: dentro ? 1 : 0.4 }}>
                 <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#374151' }}>
                   {x.ingresos >= 1000 ? `${Math.round(x.ingresos / 1000)}k` : Math.round(x.ingresos)}
