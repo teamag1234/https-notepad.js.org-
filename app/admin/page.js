@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Shell, useAdmin, eur } from './ui.js';
 
 const MESES_ES = { '01': 'Ene', '02': 'Feb', '03': 'Mar', '04': 'Abr', '05': 'May', '06': 'Jun', '07': 'Jul', '08': 'Ago', '09': 'Sep', '10': 'Oct', '11': 'Nov', '12': 'Dic' };
@@ -76,9 +76,23 @@ function Dashboard() {
     const params = new URLSearchParams();
     if (periodo.desde) params.set('desde', periodo.desde);
     if (periodo.hasta || periodo.desde) params.set('hasta', periodo.hasta || periodo.desde);
-    apiFetch(`/api/admin/resumen${params.toString() ? `?${params}` : ''}`).then(setDatos).catch((e) => setError(e.message));
+    apiFetch(`/api/admin/resumen${params.toString() ? `?${params}` : ''}`).then((d) => {
+      setDatos(d);
+      // Si los cobros de Kajabi llevan más de 1 h sin sincronizar, se lanza la
+      // sincronización en segundo plano y se refrescan los números al acabar
+      // (el plan de Vercel solo permite crons diarios).
+      const sync = d?.salud?.kajabi_sync ? Date.now() - new Date(d.salud.kajabi_sync).getTime() : Infinity;
+      if (sync > 3600000 && !window.__agSyncKajabiEnCurso) {
+        window.__agSyncKajabiEnCurso = true;
+        apiFetch('/api/admin/sync-kajabi-ingresos', { method: 'POST' })
+          .then((r) => { if (r && r.nuevos > 0) cargarRef.current?.(); })
+          .catch(() => {});
+      }
+    }).catch((e) => setError(e.message));
   }, [apiFetch, periodo]);
+  const cargarRef = useRef(null);
 
+  useEffect(() => { cargarRef.current = cargar; }, [cargar]);
   useEffect(() => { if (clave) cargar(); }, [clave, cargar]);
 
   const hoyISO = () => new Date().toISOString().slice(0, 10);
