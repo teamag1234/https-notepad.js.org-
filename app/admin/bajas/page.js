@@ -14,6 +14,7 @@ function Bajas() {
   const [aviso, setAviso] = useState('');
   const [busqueda, setBusqueda] = useState('');
   const [form, setForm] = useState(null);
+  const [nuevoAcceso, setNuevoAcceso] = useState(null);
   const [trabajando, setTrabajando] = useState(false);
 
   const cargar = useCallback(() => {
@@ -130,6 +131,54 @@ function Bajas() {
           </div>
         </div>
       )}
+
+      {/* ACCESOS POR QUITAR EN KAJABI */}
+      {(() => {
+        const pendAcc = (datos.accesos || []).filter((a) => !a.quitado && coincide(a.alumno, a.email, a.curso));
+        const hechosAcc = (datos.accesos || []).filter((a) => a.quitado).slice(0, 8);
+        return (
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', marginBottom: '20px', borderLeft: '4px solid #d97706' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: '8px' }}>
+              <h3 style={{ margin: 0 }}>🔑 Accesos por quitar en Kajabi <span style={{ color: '#9ca3af', fontSize: '13px' }}>({pendAcc.length} pendientes)</span></h3>
+              <button onClick={() => setNuevoAcceso(nuevoAcceso ? null : { alumno: '', email: '', curso: '', motivo: '' })}
+                      style={{ padding: '6px 12px', border: '1px solid #d1d5db', background: 'white', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>+ Añadir a mano</button>
+            </div>
+            <p style={{ margin: '4px 0 10px', fontSize: '12px', color: '#6b7280' }}>Bajas tramitadas y suscripciones impagadas. Quítales el acceso en Kajabi (cancelar su oferta) y márcalo aquí. Si el alumno paga el reintento, sale solo de la lista.</p>
+            {nuevoAcceso && (
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', backgroundColor: '#f9fafb', borderRadius: '8px', padding: '10px', marginBottom: '10px' }}>
+                <input placeholder="Alumno *" value={nuevoAcceso.alumno} onChange={(e) => setNuevoAcceso({ ...nuevoAcceso, alumno: e.target.value })} style={{ ...inputStyle, width: 'auto', flex: '2 1 160px' }} />
+                <input placeholder="Email" value={nuevoAcceso.email} onChange={(e) => setNuevoAcceso({ ...nuevoAcceso, email: e.target.value })} style={{ ...inputStyle, width: 'auto', flex: '2 1 160px' }} />
+                <input placeholder="Curso" value={nuevoAcceso.curso} onChange={(e) => setNuevoAcceso({ ...nuevoAcceso, curso: e.target.value })} style={{ ...inputStyle, width: 'auto', flex: '1 1 130px' }} />
+                <input placeholder="Motivo" value={nuevoAcceso.motivo} onChange={(e) => setNuevoAcceso({ ...nuevoAcceso, motivo: e.target.value })} style={{ ...inputStyle, width: 'auto', flex: '2 1 160px' }} />
+                <button disabled={trabajando || !nuevoAcceso.alumno} onClick={async () => { await accion({ accion: 'acceso-anadir', ...nuevoAcceso }, '✅ Añadido a la lista'); setNuevoAcceso(null); }}
+                        style={{ padding: '8px 14px', backgroundColor: '#111827', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>Añadir</button>
+              </div>
+            )}
+            {!pendAcc.length && <p style={{ color: '#9ca3af', margin: 0 }}>Nadie pendiente. 🎉</p>}
+            {pendAcc.map((a) => (
+              <div key={a.id} style={{ borderTop: '1px solid #f3f4f6', padding: '9px 0', display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center', fontSize: '14px' }}>
+                <div style={{ flex: '2 1 220px' }}>
+                  <strong>{a.alumno}</strong> <span style={{ color: '#9ca3af', fontSize: '12px' }}>{a.email}</span>
+                  <div style={{ fontSize: '12px', color: '#6b7280' }}>{a.motivo} · {a.creado}</div>
+                </div>
+                <div style={{ flex: '1 1 140px', fontSize: '13px', color: '#6b7280' }}>{a.curso || ''}</div>
+                <button onClick={() => accion({ accion: 'acceso-quitado', id: a.id }, `🔑 Acceso de ${a.alumno} marcado como quitado`)} disabled={trabajando}
+                        style={{ padding: '7px 14px', backgroundColor: '#d97706', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>
+                  ✓ Acceso quitado
+                </button>
+              </div>
+            ))}
+            {hechosAcc.length > 0 && (
+              <details style={{ marginTop: '10px' }}>
+                <summary style={{ fontSize: '12px', color: '#9ca3af', cursor: 'pointer' }}>Quitados recientemente ({hechosAcc.length})</summary>
+                {hechosAcc.map((a) => (
+                  <div key={a.id} style={{ fontSize: '12px', color: '#9ca3af', padding: '4px 0' }}>✓ {a.alumno} · {a.motivo} · quitado {a.quitado}</div>
+                ))}
+              </details>
+            )}
+          </div>
+        );
+      })()}
 
       {/* PENDIENTES DE TRANSFERENCIA */}
       <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', marginBottom: '20px', borderLeft: '4px solid #dc2626' }}>
