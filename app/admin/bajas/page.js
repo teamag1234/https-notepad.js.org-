@@ -76,8 +76,14 @@ function Bajas() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', alignItems: 'baseline', gap: '10px' }}>
         <h2 style={{ marginTop: 0 }}>🚪 Bajas y devoluciones</h2>
-        <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="🔍 Buscar alumno…"
-               style={{ padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '14px', width: '220px' }} />
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="🔍 Buscar alumno…"
+                 style={{ padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '14px', width: '220px' }} />
+          <button onClick={() => { setAviso(''); setForm({ alumno: '', email: '', concepto: '', tipo: 'BAJA', importe: '', fechaCompra: '', referencia: null, iban: '', titular: '', dniTitular: '', dias: null }); }}
+                  style={{ padding: '8px 14px', backgroundColor: '#dc2626', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>
+            + Baja manual
+          </button>
+        </div>
       </div>
       <p style={{ color: '#6b7280', fontSize: '14px' }}>
         Busca el cobro del alumno y pulsa «Dar de baja»: si tienes su IBAN se tramita al momento; si no, le llega un formulario por email y no hay que hacer nada más.
