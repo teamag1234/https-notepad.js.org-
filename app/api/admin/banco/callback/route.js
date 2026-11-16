@@ -24,8 +24,9 @@ export async function GET(request) {
     if (sync.nuevos != null) destino.searchParams.set('nuevos', String(sync.nuevos));
     return NextResponse.redirect(destino);
   } catch (error) {
-    console.error('Error completando conexión bancaria:', error.message);
-    destino.searchParams.set('error', error.message);
+    const detalle = error.response?.data ? JSON.stringify(error.response.data).substring(0, 300) : error.message;
+    console.error('Error completando conexión bancaria:', detalle);
+    destino.searchParams.set('error', detalle);
     return NextResponse.redirect(destino);
   }
 }
