@@ -3,7 +3,7 @@ import { comprobarAdmin } from '../../../../lib/admin/auth.js';
 import { dbConfigurada } from '../../../../lib/admin/db.js';
 import {
   listarTrabajadores, crearTrabajador, actualizarTrabajador, detalleTrabajador,
-  crearDocumento, borrarDocumento, crearVacaciones, cambiarEstadoVacaciones, borrarVacaciones,
+  crearDocumento, reenviarDocumentos, borrarDocumento, crearVacaciones, cambiarEstadoVacaciones, borrarVacaciones,
   emailRrhhInfo,
 } from '../../../../lib/admin/rrhh.js';
 import { diagnosticoAgapp } from '../../../../lib/admin/agapp.js';
@@ -60,6 +60,12 @@ export async function POST(request) {
         const origen = process.env.ADMIN_BASE_URL || new URL(request.url).origin;
         const creado = await crearDocumento({ ...body, origen });
         return NextResponse.json({ success: true, data: creado });
+      }
+      case 'reenviar-documentos': {
+        if (!body.trabajador_id) return NextResponse.json({ success: false, error: 'Falta el trabajador' }, { status: 400 });
+        const origen = process.env.ADMIN_BASE_URL || new URL(request.url).origin;
+        const r = await reenviarDocumentos({ trabajador_id: Number(body.trabajador_id), documento_id: body.documento_id ? Number(body.documento_id) : null, origen });
+        return NextResponse.json({ success: true, data: r });
       }
       case 'borrar-documento': {
         await borrarDocumento(Number(body.id));

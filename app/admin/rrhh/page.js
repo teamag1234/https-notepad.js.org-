@@ -251,6 +251,13 @@ function RRHH() {
                   {trabajando && progreso > 0 ? `Subiendo… ${Math.round(progreso)}%` : 'Guardar'}
                 </button>
               </form>
+              {detalle && detalle.documentos.some((d) => d.tipo === 'NÓMINA') && (
+                <button disabled={trabajando}
+                  onClick={() => { if (window.confirm(`¿Reenviar todas las nóminas de ${sel.nombre} a ${emailRrhh.trim() || sel.email || 'su email'}?`)) accion({ accion: 'reenviar-documentos', trabajador_id: sel.id }, `📨 Nóminas reenviadas a ${sel.nombre}`); }}
+                  style={{ marginBottom: '10px', padding: '7px 14px', backgroundColor: 'white', color: '#111827', border: '1px solid #d1d5db', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>
+                  📨 Reenviar todas las nóminas
+                </button>
+              )}
               {!detalle && <p>Cargando…</p>}
               {detalle && detalle.documentos.length === 0 && <p style={{ color: '#9ca3af' }}>Sin documentos todavía.</p>}
               {detalle && detalle.documentos.map((d) => (
@@ -265,6 +272,7 @@ function RRHH() {
                       <span style={{ fontSize: '12px', color: '#9ca3af' }}>— sin aviso (¿email del trabajador?)</span>
                     )}
                     <span style={{ color: '#9ca3af', fontSize: '12px' }}>{d.subido}</span>
+                    <button title="Reenviar por email" disabled={trabajando} onClick={() => accion({ accion: 'reenviar-documentos', trabajador_id: sel.id, documento_id: d.id }, `📨 "${d.titulo}" reenviado`)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '14px' }}>📨</button>
                     <button onClick={() => accion({ accion: 'borrar-documento', id: d.id })} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#9ca3af' }}>🗑️</button>
                   </span>
                 </div>
